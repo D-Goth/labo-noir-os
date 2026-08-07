@@ -1,0 +1,55 @@
+{
+  "categories": [
+    {
+      "name": "🔍 Reconnaissance",
+      "tools": [
+        {
+          "name": "Nmap",
+          "description": "Scan de ports et détection de services",
+          "command": "nmap",
+          "params": [
+            {"id": "target", "type": "text", "label": "Cible (IP / domaine)", "placeholder": "192.168.1.1"},
+            {"id": "scan_type", "type": "dropdown", "label": "Type de scan", "options": ["-sS (Stealth)", "-sT (Connect)", "-sU (UDP)", "-sV (Version)"], "default": "-sS (Stealth)"},
+            {"id": "port_scan", "type": "checkbox", "label": "Tous les ports (-p-)", "option": "-p-", "default": false},
+            {"id": "os_detect", "type": "checkbox", "label": "Détection OS (-O)", "option": "-O", "default": false},
+            {"id": "aggressive", "type": "checkbox", "label": "Scan agressif (-A)", "option": "-A", "default": false}
+          ]
+        }
+      ]
+    },
+    {
+      "name": "🔐 Bruteforce & Auth",
+      "tools": [
+        {
+          "name": "Hydra",
+          "description": "Bruteforce sur protocoles réseau",
+          "command": "hydra",
+          "params": [
+            {"id": "target", "type": "text", "label": "Cible (IP)", "placeholder": "192.168.1.1"},
+            {"id": "service", "type": "dropdown", "label": "Service", "options": ["ssh", "ftp", "http-post-form", "smb", "rdp"], "default": "ssh"},
+            {"id": "user_file", "type": "text", "label": "Fichier utilisateurs", "placeholder": "/usr/share/wordlists/users.txt"},
+            {"id": "pass_file", "type": "text", "label": "Fichier mots de passe", "placeholder": "/usr/share/wordlists/passwords.txt"},
+            {"id": "threads", "type": "text", "label": "Threads (-t)", "default": "4"}
+          ]
+        }
+      ]
+    },
+    {
+      "name": "💉 Web & Exploit",
+      "tools": [
+        {
+          "name": "SQLMap",
+          "description": "Détection et exploitation d'injections SQL",
+          "command": "sqlmap",
+          "params": [
+            {"id": "url", "type": "text", "label": "URL cible", "placeholder": "http://cible.com/page.php?id=1"},
+            {"id": "level", "type": "dropdown", "label": "Intensité", "options": ["1 (Léger)", "2", "3 (Lourd)"], "default": "1 (Léger)"},
+            {"id": "dbms", "type": "dropdown", "label": "SGBD", "options": ["Auto", "MySQL", "PostgreSQL", "Oracle", "MSSQL"], "default": "Auto"},
+            {"id": "dbs", "type": "checkbox", "label": "Lister les bases (--dbs)", "option": "--dbs", "default": true},
+            {"id": "tables", "type": "checkbox", "label": "Lister les tables (--tables)", "option": "--tables", "default": false}
+          ]
+        }
+      ]
+    }
+  ]
+}

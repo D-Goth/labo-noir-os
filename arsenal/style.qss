@@ -1,0 +1,62 @@
+QMainWindow {
+    background-color: #0A0A0A;
+}
+
+QListWidget {
+    background-color: #1A1A1A;
+    color: #C0C0C0;
+    border: 1px solid #2A2A2A;
+    border-radius: 5px;
+    padding: 5px;
+    font-size: 13px;
+}
+
+QListWidget::item:selected {
+    background-color: #FF1654;
+    color: #FFFFFF;
+}
+
+QLineEdit, QComboBox, QTextEdit {
+    background-color: #1A1A1A;
+    color: #FFFFFF;
+    border: 1px solid #333333;
+    border-radius: 3px;
+    padding: 5px;
+}
+
+QLineEdit:focus, QComboBox:focus {
+    border: 1px solid #FF1654;
+}
+
+QLabel {
+    color: #C0C0C0;
+}
+
+QPushButton {
+    background-color: #2A2A2A;
+    color: #C0C0C0;
+    border: 1px solid #333333;
+    border-radius: 3px;
+    padding: 8px;
+}
+
+QPushButton:hover {
+    background-color: #FF1654;
+    color: #FFFFFF;
+}
+
+QScrollBar:vertical {
+    background: #1A1A1A;
+    width: 10px;
+    border-radius: 5px;
+}
+
+QScrollBar::handle:vertical {
+    background: #FF1654;
+    border-radius: 5px;
+    min-height: 20px;
+}
+
+QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
+    height: 0px;
+}

@@ -1,0 +1,12 @@
+[Desktop Entry]
+Name=NocturneGlass
+Comment=Thème noir glassmorphique pour Lab'O Noir
+Type=Service
+ServiceTypes=Plasma/LookAndFeel,Plasma/Theme
+
+X-KDE-PluginInfo-Name=NocturneGlass
+X-KDE-PluginInfo-Category=Desktop
+X-KDE-PluginInfo-Version=1.0
+X-KDE-PluginInfo-License=CC BY-NC 4.0
+
+X-Plasma-Theme-Name=NocturneGlass

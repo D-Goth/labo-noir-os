@@ -14,6 +14,16 @@
             {"id": "os_detect", "type": "checkbox", "label": "Détection OS (-O)", "option": "-O", "default": false},
             {"id": "aggressive", "type": "checkbox", "label": "Scan agressif (-A)", "option": "-A", "default": false}
           ]
+        },
+        {
+          "name": "Masscan",
+          "description": "Scan de ports à très grande vitesse",
+          "command": "masscan",
+          "params": [
+            {"id": "target", "type": "text", "label": "Cible (IP / plage)", "placeholder": "192.168.1.0/24"},
+            {"id": "ports", "type": "text", "label": "Ports à scanner", "placeholder": "80,443,22,21", "default": "80,443,22"},
+            {"id": "rate", "type": "text", "label": "Débit (paquets/s)", "placeholder": "1000", "default": "1000"}
+          ]
         }
       ]
     },
@@ -31,6 +41,15 @@
             {"id": "pass_file", "type": "text", "label": "Fichier mots de passe", "placeholder": "/usr/share/wordlists/passwords.txt"},
             {"id": "threads", "type": "text", "label": "Threads (-t)", "default": "4"}
           ]
+        },
+        {
+          "name": "John the Ripper",
+          "description": "Crack de mots de passe (hash)",
+          "command": "john",
+          "params": [
+            {"id": "hash_file", "type": "text", "label": "Fichier de hash", "placeholder": "/path/to/hash.txt"},
+            {"id": "wordlist", "type": "text", "label": "Wordlist (optionnel)", "placeholder": "/usr/share/wordlists/rockyou.txt"}
+          ]
         }
       ]
     },
@@ -47,6 +66,66 @@
             {"id": "dbms", "type": "dropdown", "label": "SGBD", "options": ["Auto", "MySQL", "PostgreSQL", "Oracle", "MSSQL"], "default": "Auto"},
             {"id": "dbs", "type": "checkbox", "label": "Lister les bases (--dbs)", "option": "--dbs", "default": true},
             {"id": "tables", "type": "checkbox", "label": "Lister les tables (--tables)", "option": "--tables", "default": false}
+          ]
+        },
+        {
+          "name": "Nikto",
+          "description": "Scan de vulnérabilités web",
+          "command": "nikto",
+          "params": [
+            {"id": "target", "type": "text", "label": "URL cible", "placeholder": "http://cible.com"},
+            {"id": "ssl", "type": "checkbox", "label": "Forcer HTTPS (-ssl)", "option": "-ssl", "default": false}
+          ]
+        }
+      ]
+    },
+    {
+      "name": "📶 Wi-Fi & Réseau",
+      "tools": [
+        {
+          "name": "Aircrack-ng",
+          "description": "Suite d'outils Wi-Fi (capture, crack)",
+          "command": "aircrack-ng",
+          "params": [
+            {"id": "cap_file", "type": "text", "label": "Fichier .cap", "placeholder": "/path/to/capture.cap"},
+            {"id": "wordlist", "type": "text", "label": "Wordlist", "placeholder": "/usr/share/wordlists/rockyou.txt"}
+          ]
+        },
+        {
+          "name": "Tcpdump",
+          "description": "Capture de paquets réseau",
+          "command": "tcpdump",
+          "params": [
+            {"id": "interface", "type": "text", "label": "Interface", "placeholder": "eth0", "default": "eth0"},
+            {"id": "output", "type": "text", "label": "Fichier de sortie (.pcap)", "placeholder": "capture.pcap"}
+          ]
+        }
+      ]
+    },
+    {
+      "name": "🧰 Utilitaires",
+      "tools": [
+        {
+          "name": "Netcat (nc)",
+          "description": "Outil réseau polyvalent (écoute, connexion, transfert)",
+          "command": "nc",
+          "params": [
+            {"id": "mode", "type": "dropdown", "label": "Mode", "options": ["-l (écoute)", "-v (client)", "-z (scan)"], "default": "-l (écoute)"},
+            {"id": "port", "type": "text", "label": "Port", "placeholder": "4444", "default": "4444"},
+            {"id": "target", "type": "text", "label": "Cible (client)", "placeholder": "192.168.1.1"}
+          ]
+        }
+      ]
+    },
+    {
+      "name": "🛠️ Personnalisés",
+      "tools": [
+        {
+          "name": "Ping sweep",
+          "description": "Scan ICMP d'une plage IP (perso)",
+          "command": "ping",
+          "params": [
+            {"id": "range", "type": "text", "label": "Plage (ex: 192.168.1.1-254)", "placeholder": "192.168.1.1-254"}
           ]
         }
       ]

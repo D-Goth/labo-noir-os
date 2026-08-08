@@ -23,6 +23,7 @@ class ArsenalLauncher(QMainWindow):
         
         self.current_tool = None
         self.inputs = {}
+        self.params_widgets = []  # pour garder trace des widgets
         self.initUI()
         self.load_styles()
     
@@ -125,6 +126,7 @@ class ArsenalLauncher(QMainWindow):
         self.desc_label.setText(f"{tool['name']} — {tool['description']}")
         
         self.inputs = {}
+        self.params_widgets = []
         for param in tool["params"]:
             if param["type"] == "text":
                 field = QLineEdit()
@@ -133,6 +135,7 @@ class ArsenalLauncher(QMainWindow):
                     field.setText(param["default"])
                 self.params_layout.addRow(QLabel(param["label"]), field)
                 self.inputs[param["id"]] = field
+                self.params_widgets.append(field)
             elif param["type"] == "dropdown":
                 combo = QComboBox()
                 combo.addItems(param["options"])
@@ -141,6 +144,7 @@ class ArsenalLauncher(QMainWindow):
                     combo.setCurrentText(default)
                 self.params_layout.addRow(QLabel(param["label"]), combo)
                 self.inputs[param["id"]] = combo
+                self.params_widgets.append(combo)
             elif param["type"] == "checkbox":
                 check = QCheckBox(param["label"])
                 check.setStyleSheet("color: #C0C0C0;")
@@ -148,22 +152,45 @@ class ArsenalLauncher(QMainWindow):
                     check.setChecked(True)
                 self.params_layout.addRow("", check)
                 self.inputs[param["id"]] = check
+                self.params_widgets.append(check)
     
     def clear_layout(self, layout):
         while layout.count():
             child = layout.takeAt(0)
             if child.widget():
                 child.widget().deleteLater()
+        self.inputs = {}
+        self.params_widgets = []
+    
+    def is_widget_valid(self, widget):
+        """Vérifie si un widget Qt est encore valide."""
+        try:
+            # Tester si le widget existe encore
+            widget.objectName()
+            return True
+        except RuntimeError:
+            return False
     
     def execute_tool(self):
         if not self.current_tool:
             return
+        
+        # Vérifier que tous les widgets sont encore valides
+        for widget in self.params_widgets:
+            if not self.is_widget_valid(widget):
+                self.output_area.append("[ERREUR] Les paramètres ont été modifiés. Veuillez resélectionner l'outil.")
+                return
+        
         tool = self.current_tool
         command = tool["command"]
         args = []
         
         for param in tool["params"]:
-            widget = self.inputs[param["id"]]
+            widget = self.inputs.get(param["id"])
+            if not widget or not self.is_widget_valid(widget):
+                self.output_area.append(f"[ERREUR] Paramètre '{param['label']}' invalide.")
+                return
+            
             if param["type"] == "text":
                 val = widget.text().strip()
                 if val:
@@ -207,7 +234,7 @@ class ArsenalLauncher(QMainWindow):
     
     def load_styles(self):
         base_dir = os.path.dirname(os.path.abspath(__file__))
-        style_path = os.path.join(base_dir, "styles.qss")
+        style_path = os.path.join(base_dir, "style.qss")
         if os.path.exists(style_path):
             with open(style_path, "r") as f:
                 self.setStyleSheet(f.read())

@@ -1,0 +1,17 @@
+nom = "Givre"
+mode = "clair"
+accent = "#FF1654"
+
+[verre]
+flou = 14
+bruit = 0
+opacite_terminal = 0.92
+
+[fenetres]
+boutons = "classique"
+
+[fond]
+image = "labonoir.jpg"
+
+[orbit]
+transparence = 150

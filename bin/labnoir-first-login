@@ -1,0 +1,32 @@
+#!/usr/bin/env bash
+set -uo pipefail
+
+# [DSK-09]
+STATE_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/labnoir"
+DONE="$STATE_DIR/first-login.done"
+CONF="/etc/labnoir/labnoir.conf"
+PREFIX="${LABNOIR_PREFIX:-/opt/labnoir}"
+LOG="$STATE_DIR/first-login.log"
+
+[[ -f "$DONE" ]] && exit 0
+mkdir -p "$STATE_DIR"
+exec >>"$LOG" 2>&1
+echo "== $(date '+%F %T')"
+
+conf() { [[ -f "$CONF" ]] && sed -n "s|^$1=||p" "$CONF" | tail -n1; }
+
+sleep 4
+
+if command -v plasma-apply-lookandfeel >/dev/null 2>&1; then
+    plasma-apply-lookandfeel --apply fr.blacklab.labonoir --resetLayout || echo "look-and-feel non appliqué"
+fi
+
+theme="$(conf THEME)"
+"$PREFIX/bin/labnoir-theme" apply --fond "${theme:-labonoir}" || echo "thème non appliqué"
+
+if [[ "$(conf ORBIT_LAYOUT)" == 1 && -x "$PREFIX/widgets/orbitpixel/place-layout.sh" ]]; then
+    sleep 2
+    "$PREFIX/widgets/orbitpixel/place-layout.sh" 'screenGeometry(desktops()[0].screen).width' || echo "Orbit Pixel non placé"
+fi
+
+touch "$DONE"

@@ -1,0 +1,7 @@
+[Desktop Entry]
+Type=Application
+Name=Lab'O Noir : premier démarrage
+Exec=/usr/local/bin/labnoir-first-login
+OnlyShowIn=KDE;
+X-KDE-autostart-phase=2
+NoDisplay=true

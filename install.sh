@@ -1,125 +1,181 @@
-#!/bin/bash
-# ⚙️ Lab'O Noir OS - Installateur pour Debian 13.6 (Trixie)
+#!/usr/bin/env bash
+set -uo pipefail
 
-set -e
+# [INS-01]
+LABNOIR_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+export LABNOIR_ROOT
+# shellcheck source=lib/common.sh
+. "$LABNOIR_ROOT/lib/common.sh"
 
-REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ARSENAL_DIR="/opt/labnoir/arsenal"
+ONLY=()
+SKIP=()
+ASSUME_YES=0
+FORCE=0
 
-# --- BANNER LAB'O'NOIR ---
-echo -e "\e[31m"
-echo " ██╗      █████╗ ██████╗  ██████╗ ███╗   ██╗ ██████╗ ██╗██████╗ "
-echo " ██║     ██╔══██╗██╔══██╗██╔═══██╗████╗  ██║██╔═══██╗██║██╔══██╗"
-echo " ██║     ███████║██████╔╝██║   ██║██╔██╗ ██║██║   ██║██║██████╔╝"
-echo " ██║     ██╔══██║██╔══██╗██║   ██║██║╚██╗██║██║   ██║██║██╔══██╗"
-echo " ███████╗██║  ██║██████╔╝╚██████╔╝██║ ╚████║╚██████╔╝██║██║  ██║"
-echo " ╚══════╝╚═╝  ╚═╝╚═════╝  ╚═════╝ ╚═╝  ╚═══╝ ╚═════╝ ╚═╝╚═╝  ╚═╝"
-echo -e "\e[0m"
-echo -e "\e[31m          LAB'O'NOIR OS — FORGE YOUR OWN SHADOW          \e[0m"
-echo -e "\e[31m                 Installation (Debian 13.6)              \e[0m"
+# [INS-02]
+usage() {
+    cat <<EOF
+Lab'O Noir OS : installateur
 
-# Vérification des privilèges
-if [[ $EUID -ne 0 ]]; then
-   echo -e "\e[31mCe script doit être exécuté en root (sudo).\e[0m"
-   exit 1
-fi
+Transforme une Debian 13 ou une Kubuntu 26.04 (KDE Plasma 6) en poste Lab'O Noir.
 
-# 1. Mise à jour du système
-echo -e "\e[32m>> Mise à jour du système...\e[0m"
-apt update && apt upgrade -y
+Usage : sudo ./install.sh [options]
 
-# 2. Vérification de KDE Plasma
-echo -e "\e[32m>> Vérification des paquets KDE...\e[0m"
-apt install -y --no-install-recommends plasma-desktop sddm konsole dolphin \
-               plasma-workspace plasma-themes breeze-gtk-theme \
-               kvantum papirus-icon-theme 2>/dev/null || echo -e "\e[33mCertains paquets KDE sont déjà présents.\e[0m"
-
-# 3. Outils de développement
-echo -e "\e[32m>> Installation des outils de développement...\e[0m"
-DEV_TOOLS=(
-    git
-    curl
-    wget
-    htop
-    build-essential
-    python3
-    python3-pip
-    python3-pyqt5
-    python3-pyqt5.qtsvg
-    flatpak
-    snapd
-    network-manager
-)
-for tool in "${DEV_TOOLS[@]}"; do
-    if apt-cache show "$tool" &>/dev/null; then
-        echo -e "\e[32m   - Installation de $tool...\e[0m"
-        apt install -y "$tool" 2>/dev/null || echo -e "\e[33m   - $tool non installé (erreur).\e[0m"
-    else
-        echo -e "\e[33m   - $tool non trouvé dans les dépôts.\e[0m"
-    fi
-done
-
-# 4. Outils de sécurité
-echo -e "\e[32m>> Installation des outils de sécurité...\e[0m"
-SEC_TOOLS=(
-    nmap
-    hydra
-    sqlmap
-    wpscan
-    nikto
-    metasploit-framework
-    aircrack-ng
-    john
-    hashcat
-    netcat-traditional
-    tcpdump
-    wireshark
-    ettercap-graphical
-)
-for tool in "${SEC_TOOLS[@]}"; do
-    if apt-cache show "$tool" &>/dev/null; then
-        echo -e "\e[32m   - Installation de $tool...\e[0m"
-        apt install -y "$tool" 2>/dev/null || echo -e "\e[33m   - $tool non installé (erreur).\e[0m"
-    else
-        echo -e "\e[33m   - $tool non trouvé dans les dépôts.\e[0m"
-    fi
-done
-
-# 5. Déploiement de l'Arsenal
-echo -e "\e[32m>> Déploiement de l'Arsenal dans /opt/labnoir/...\e[0m"
-mkdir -p "$ARSENAL_DIR"
-cp -r "$REPO_DIR/arsenal/"* "$ARSENAL_DIR/"
-cp -r "$REPO_DIR/assets/"* "$ARSENAL_DIR/assets/" 2>/dev/null || true
-chmod +x "$ARSENAL_DIR/arsenal.py"
-
-# 6. Dépendances Python
-echo -e "\e[32m>> Installation des dépendances Python...\e[0m"
-pip3 install -r "$ARSENAL_DIR/requirements.txt" --break-system-packages || pip3 install -r "$ARSENAL_DIR/requirements.txt"
-
-# 7. Raccourci .desktop
-echo -e "\e[32m>> Création du raccourci dans le menu KDE...\e[0m"
-cat > /usr/share/applications/arsenal.desktop << EOF
-[Desktop Entry]
-Name=Arsenal - Lab'O Noir
-Comment=Lanceur d'outils cyber
-Exec=python3 /opt/labnoir/arsenal/arsenal.py
-Icon=/opt/labnoir/arsenal/assets/icon.png
-Terminal=false
-Type=Application
-Categories=System;Utility;
+  --list              affiche les modules et quitte
+  --only a,b          n'installe que ces modules
+  --skip a,b          saute ces modules
+  --user NOM          compte à personnaliser (par défaut : celui qui a lancé sudo)
+  --dry-run           affiche ce qui serait fait, sans rien modifier
+  --yes               ne demande pas de confirmation
+  --force             continue même hors de Debian 13
+  -h, --help          cette aide
 EOF
+}
 
-# 8. Alias
-echo "alias arsenal='python3 /opt/labnoir/arsenal/arsenal.py'" >> /etc/bash.bashrc
+split_csv() {
+    local IFS=,
+    read -r -a _split <<<"$1"
+    printf '%s\n' "${_split[@]}"
+}
 
-# 9. Dotfiles
-if [ -n "$SUDO_USER" ]; then
-    HOME_USER=$(getent passwd "$SUDO_USER" | cut -d: -f6)
-    cp "$REPO_DIR/dotfiles/.bashrc" "$HOME_USER/.bashrc" 2>/dev/null || true
-    cp "$REPO_DIR/dotfiles/.zshrc" "$HOME_USER/.zshrc" 2>/dev/null || true
+while (($#)); do
+    case "$1" in
+        --list) LIST_ONLY=1 ;;
+        --only) shift; mapfile -t ONLY < <(split_csv "${1:-}") ;;
+        --skip) shift; mapfile -t SKIP < <(split_csv "${1:-}") ;;
+        --user) shift; LABNOIR_USER="${1:-}"; export LABNOIR_USER ;;
+        --dry-run) LABNOIR_DRY_RUN=1; export LABNOIR_DRY_RUN ;;
+        --yes) ASSUME_YES=1 ;;
+        --force) FORCE=1 ;;
+        -h | --help) usage; exit 0 ;;
+        *) usage; die "option inconnue : $1" ;;
+    esac
+    shift
+done
+
+# [INS-03]
+module_id() {
+    basename "$1" .sh | sed 's/^[0-9]*-//'
+}
+
+module_desc() {
+    sed -n 's/^MODULE_DESC="\(.*\)"$/\1/p' "$1" | head -n1
+}
+
+module_default() {
+    ! grep -q '^MODULE_OPTIONAL=1' "$1"
+}
+
+contains() {
+    local needle="$1" item
+    shift
+    for item in "$@"; do [[ "$item" == "$needle" ]] && return 0; done
+    return 1
+}
+
+MODULES=()
+for f in "$LABNOIR_ROOT"/modules/[0-9]*.sh; do
+    MODULES+=("$f")
+done
+
+selected() {
+    local id
+    id="$(module_id "$1")"
+    if ((${#ONLY[@]})); then
+        contains "$id" "${ONLY[@]}"
+        return
+    fi
+    ((${#SKIP[@]})) && contains "$id" "${SKIP[@]}" && return 1
+    module_default "$1"
+}
+
+if [[ "${LIST_ONLY:-0}" == 1 ]]; then
+    printf "Modules de Lab'O Noir OS :\n\n"
+    for f in "${MODULES[@]}"; do
+        mark="  "
+        module_default "$f" || mark="○ "
+        printf '  %s%-16s %s\n' "$mark" "$(module_id "$f")" "$(module_desc "$f")"
+    done
+    printf '\n  ○ = facultatif, à demander avec --only\n'
+    exit 0
 fi
 
-# 10. Fin
-echo -e "\e[32m>> Installation terminée !\e[0m"
-echo -e "\e[31mRedémarre la session pour profiter du thème.\e[0m"
-echo -e "\e[32mLance l'Arsenal avec la commande : arsenal\e[0m"
+for id in "${ONLY[@]}" "${SKIP[@]}"; do
+    [[ -z "$id" ]] && continue
+    found=0
+    for f in "${MODULES[@]}"; do [[ "$(module_id "$f")" == "$id" ]] && found=1; done
+    ((found)) || die "module inconnu : $id (voir --list)"
+done
+
+# [INS-04]
+[[ $EUID -eq 0 || "$LABNOIR_DRY_RUN" == 1 ]] || die "lance l'installateur avec sudo : sudo ./install.sh"
+
+if ! is_supported; then
+    if ((FORCE)); then
+        warn "système détecté : $(os_field PRETTY_NAME). Lab'O Noir vise Debian 13 et Kubuntu 26.04 : on continue (--force)."
+    elif [[ "$LABNOIR_DRY_RUN" == 1 ]]; then
+        warn "système détecté : $(os_field PRETTY_NAME), ni Debian 13 ni Kubuntu 26.04 (simulation seulement)"
+    else
+        die "Lab'O Noir vise Debian 13 et Kubuntu 26.04 (système détecté : $(os_field PRETTY_NAME)). Relance avec --force pour essayer quand même."
+    fi
+fi
+
+USER_NAME="$(target_user)"
+TODO=()
+for f in "${MODULES[@]}"; do
+    selected "$f" && TODO+=("$f")
+done
+((${#TODO[@]})) || die "aucun module sélectionné"
+
+printf "\n%sLab'O Noir OS%s\n\n" "$C_ACC" "$C_OFF"
+info "Compte personnalisé : ${USER_NAME:-aucun}"
+info "Modules : $(for f in "${TODO[@]}"; do printf '%s ' "$(module_id "$f")"; done)"
+[[ "$LABNOIR_DRY_RUN" == 1 ]] && info "Simulation : rien ne sera modifié."
+
+if [[ "$ASSUME_YES" != 1 && "$LABNOIR_DRY_RUN" != 1 && -t 0 ]]; then
+    printf '\n  Continuer ? [O/n] '
+    read -r answer
+    [[ -z "$answer" || "$answer" =~ ^[oOyY] ]] || exit 0
+fi
+
+# [INS-05]
+if [[ "$LABNOIR_DRY_RUN" != 1 ]]; then
+    : >"$LABNOIR_LOG" 2>/dev/null || true
+    chmod 600 "$LABNOIR_LOG" 2>/dev/null || true
+fi
+: >"$LABNOIR_MISSING_FILE"
+export LABNOIR_MISSING_FILE
+step "préparation"
+apt_ready
+
+DONE=()
+FAILED=()
+for f in "${TODO[@]}"; do
+    id="$(module_id "$f")"
+    step "$id · $(module_desc "$f")"
+    if (
+        set -e
+        # shellcheck source=/dev/null
+        . "$f"
+        module_run
+    ); then
+        DONE+=("$id")
+    else
+        FAILED+=("$id")
+        warn "le module $id a échoué : voir $LABNOIR_LOG"
+    fi
+done
+
+# [INS-06]
+printf '\n%s●%s Bilan\n' "$C_ACC" "$C_OFF"
+((${#DONE[@]})) && ok "terminés : ${DONE[*]}"
+((${#FAILED[@]})) && warn "en échec : ${FAILED[*]}"
+if [[ -s "$LABNOIR_MISSING_FILE" ]]; then
+    warn "paquets introuvables dans les dépôts : $(sort -u "$LABNOIR_MISSING_FILE" | tr '\n' ' ')"
+fi
+rm -f "$LABNOIR_MISSING_FILE"
+if [[ "$LABNOIR_DRY_RUN" != 1 ]]; then
+    info "Journal : $LABNOIR_LOG"
+    info "Ferme puis rouvre ta session pour appliquer le bureau."
+fi
+((${#FAILED[@]} == 0))

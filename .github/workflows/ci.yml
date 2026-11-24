@@ -1,0 +1,48 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  qualite:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: ShellCheck
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq shellcheck
+          shellcheck -x install.sh lib/common.sh modules/*.sh tools/*.sh \
+            bin/labnoir-privacy bin/labnoir-redteam bin/labnoir-first-login
+      - name: Python
+        run: python3 -m py_compile bin/labnoir-theme arsenal/arsenal.py arsenal/vues.py studio/studio.py scripts/nomenclature.py
+      - name: Nomenclature
+        run: python3 scripts/nomenclature.py --check
+      - name: Catalogue Arsenal
+        run: python3 -c "import json; json.load(open('arsenal/tools.json'))"
+      - name: Vues d'Arsenal
+        run: |
+          pip install --quiet PyQt6
+          sudo apt-get install -y -qq libegl1 libxkbcommon0 libfontconfig1 >/dev/null
+          QT_QPA_PLATFORM=offscreen python3 tests/test_vues.py
+          QT_QPA_PLATFORM=offscreen python3 tests/test_arsenal_cmd.py
+          QT_QPA_PLATFORM=offscreen python3 tests/test_studio.py
+      - name: Thèmes
+        run: |
+          for t in themes/*.toml; do
+            python3 bin/labnoir-theme render colors "$(basename "$t" .toml)" "/tmp/$(basename "$t").colors"
+          done
+
+  paquets:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        image: ["debian:trixie", "ubuntu:26.04"]
+    container: ${{ matrix.image }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Paquets des listes
+        run: ./tools/check-packages.sh
+      - name: Simulation de l'installation
+        run: ./install.sh --dry-run --yes --user root

@@ -1,0 +1,17 @@
+nom = "Lab'O Noir"
+mode = "sombre"
+accent = "#FF1654"
+
+[verre]
+flou = 10
+bruit = 2
+opacite_terminal = 0.86
+
+[fenetres]
+boutons = "classique"
+
+[fond]
+image = "labonoir.jpg"
+
+[orbit]
+transparence = 190

@@ -1,0 +1,625 @@
+{
+  "version": 2,
+  "categories": [
+    {
+      "name": "Défense et analyse",
+      "tools": [
+        {
+          "id": "tshark",
+          "name": "TShark",
+          "description": "Capture et lecture du trafic réseau (Wireshark en ligne de commande).",
+          "program": "tshark",
+          "runner": "host",
+          "params": [
+            {
+              "type": "text",
+              "id": "iface",
+              "label": "Interface",
+              "flag": "-i",
+              "placeholder": "eth0, wlan0…"
+            },
+            {
+              "type": "text",
+              "id": "count",
+              "label": "Nombre de paquets",
+              "flag": "-c",
+              "default": "100"
+            },
+            {
+              "type": "text",
+              "id": "filter",
+              "label": "Filtre de capture",
+              "flag": "-f",
+              "placeholder": "port 443"
+            }
+          ]
+        },
+        {
+          "id": "yara",
+          "name": "YARA",
+          "description": "Recherche de motifs de logiciels malveillants dans des fichiers.",
+          "program": "yara",
+          "runner": "host",
+          "params": [
+            {
+              "type": "flag",
+              "id": "rec",
+              "label": "Parcourir les sous-dossiers",
+              "args": [
+                "-r"
+              ]
+            },
+            {
+              "type": "text",
+              "id": "rules",
+              "label": "Fichier de règles",
+              "required": true,
+              "placeholder": "regles.yar"
+            },
+            {
+              "type": "text",
+              "id": "path",
+              "label": "Fichier ou dossier analysé",
+              "required": true
+            }
+          ],
+          "vue": {
+            "type": "yara"
+          }
+        },
+        {
+          "id": "clamscan",
+          "name": "ClamAV",
+          "description": "Analyse antivirus d'un fichier ou d'un dossier.",
+          "program": "clamscan",
+          "runner": "host",
+          "params": [
+            {
+              "type": "flag",
+              "id": "rec",
+              "label": "Parcourir les sous-dossiers",
+              "args": [
+                "-r"
+              ]
+            },
+            {
+              "type": "flag",
+              "id": "infected",
+              "label": "N'afficher que les fichiers infectés",
+              "args": [
+                "-i"
+              ]
+            },
+            {
+              "type": "text",
+              "id": "path",
+              "label": "Chemin analysé",
+              "required": true,
+              "default": "~"
+            }
+          ],
+          "vue": {
+            "type": "clamav"
+          }
+        },
+        {
+          "id": "lynis",
+          "name": "Lynis",
+          "description": "Audit de sécurité du système, avec l'indice de durcissement. Coche « Administrateur » pour l'audit complet.",
+          "program": "lynis",
+          "runner": "host",
+          "params": [
+            {
+              "type": "choice",
+              "id": "mode",
+              "label": "Audit",
+              "options": [
+                {
+                  "label": "Système complet",
+                  "args": [
+                    "audit",
+                    "system"
+                  ]
+                }
+              ],
+              "default": 0
+            },
+            {
+              "type": "flag",
+              "id": "quick",
+              "label": "Sans pause",
+              "args": [
+                "--quick"
+              ],
+              "defaut_coche": true
+            },
+            {
+              "type": "flag",
+              "id": "nocolor",
+              "label": "Sans couleurs",
+              "args": [
+                "--no-colors"
+              ],
+              "defaut_coche": true
+            }
+          ],
+          "vue": {
+            "type": "lynis",
+            "fichier": "lynis-report.dat",
+            "args": [
+              "--report-file",
+              "{fichier}",
+              "--logfile",
+              "{dossier}/lynis.log"
+            ]
+          }
+        },
+        {
+          "id": "rkhunter",
+          "name": "rkhunter",
+          "description": "Recherche de rootkits.",
+          "program": "rkhunter",
+          "runner": "host",
+          "sudo": true,
+          "params": [
+            {
+              "type": "choice",
+              "id": "mode",
+              "label": "Action",
+              "options": [
+                {
+                  "label": "Vérification",
+                  "args": [
+                    "--check",
+                    "--sk",
+                    "--nocolors"
+                  ]
+                }
+              ],
+              "default": 0
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Reconnaissance",
+      "tools": [
+        {
+          "id": "nmap",
+          "name": "Nmap",
+          "description": "Découverte de ports et de services.",
+          "program": "nmap",
+          "runner": "auto",
+          "params": [
+            {
+              "type": "choice",
+              "id": "scan",
+              "label": "Type de scan",
+              "options": [
+                {
+                  "label": "Connexion TCP (-sT)",
+                  "args": [
+                    "-sT"
+                  ]
+                },
+                {
+                  "label": "Furtif SYN (-sS)",
+                  "args": [
+                    "-sS"
+                  ],
+                  "root": true
+                },
+                {
+                  "label": "UDP (-sU)",
+                  "args": [
+                    "-sU"
+                  ],
+                  "root": true
+                },
+                {
+                  "label": "Versions des services (-sV)",
+                  "args": [
+                    "-sV"
+                  ]
+                }
+              ],
+              "default": 0
+            },
+            {
+              "type": "flag",
+              "id": "all",
+              "label": "Tous les ports (-p-)",
+              "args": [
+                "-p-"
+              ]
+            },
+            {
+              "type": "flag",
+              "id": "os",
+              "label": "Détection du système (-O)",
+              "args": [
+                "-O"
+              ],
+              "root": true
+            },
+            {
+              "type": "flag",
+              "id": "agg",
+              "label": "Analyse approfondie (-A)",
+              "args": [
+                "-A"
+              ]
+            },
+            {
+              "type": "text",
+              "id": "target",
+              "label": "Cible",
+              "required": true,
+              "placeholder": "192.168.1.1 ou 192.168.1.0/24"
+            }
+          ],
+          "vue": {
+            "type": "nmap",
+            "fichier": "nmap.xml",
+            "args": [
+              "-oX",
+              "{fichier}"
+            ]
+          }
+        },
+        {
+          "id": "masscan",
+          "name": "Masscan",
+          "description": "Balayage de ports très rapide sur une plage.",
+          "program": "masscan",
+          "runner": "kali",
+          "params": [
+            {
+              "type": "text",
+              "id": "ports",
+              "label": "Ports",
+              "flag": "-p",
+              "default": "22,80,443"
+            },
+            {
+              "type": "text",
+              "id": "rate",
+              "label": "Débit (paquets/s)",
+              "flag": "--rate",
+              "default": "1000"
+            },
+            {
+              "type": "text",
+              "id": "target",
+              "label": "Plage",
+              "required": true,
+              "placeholder": "192.168.1.0/24"
+            }
+          ]
+        },
+        {
+          "id": "ping",
+          "name": "Ping",
+          "description": "Vérifie qu'une machine répond.",
+          "program": "ping",
+          "runner": "host",
+          "params": [
+            {
+              "type": "text",
+              "id": "count",
+              "label": "Nombre d'envois",
+              "flag": "-c",
+              "default": "4"
+            },
+            {
+              "type": "text",
+              "id": "target",
+              "label": "Hôte",
+              "required": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Mots de passe",
+      "tools": [
+        {
+          "id": "hydra",
+          "name": "Hydra",
+          "description": "Test de mots de passe sur un service réseau.",
+          "program": "hydra",
+          "runner": "kali",
+          "params": [
+            {
+              "type": "text",
+              "id": "users",
+              "label": "Liste d'identifiants",
+              "flag": "-L",
+              "required": true
+            },
+            {
+              "type": "text",
+              "id": "pass",
+              "label": "Liste de mots de passe",
+              "flag": "-P",
+              "required": true
+            },
+            {
+              "type": "text",
+              "id": "threads",
+              "label": "Tâches parallèles",
+              "flag": "-t",
+              "default": "4"
+            },
+            {
+              "type": "text",
+              "id": "target",
+              "label": "Cible",
+              "required": true
+            },
+            {
+              "type": "choice",
+              "id": "service",
+              "label": "Service",
+              "options": [
+                {
+                  "label": "ssh",
+                  "args": [
+                    "ssh"
+                  ]
+                },
+                {
+                  "label": "ftp",
+                  "args": [
+                    "ftp"
+                  ]
+                },
+                {
+                  "label": "smb",
+                  "args": [
+                    "smb"
+                  ]
+                },
+                {
+                  "label": "rdp",
+                  "args": [
+                    "rdp"
+                  ]
+                }
+              ],
+              "default": 0
+            }
+          ]
+        },
+        {
+          "id": "john",
+          "name": "John the Ripper",
+          "description": "Test de robustesse de condensats de mots de passe.",
+          "program": "john",
+          "runner": "kali",
+          "params": [
+            {
+              "type": "text",
+              "id": "wordlist",
+              "label": "Liste de mots",
+              "placeholder": "/usr/share/wordlists/rockyou.txt",
+              "prefix": "--wordlist="
+            },
+            {
+              "type": "text",
+              "id": "hashes",
+              "label": "Fichier de condensats",
+              "required": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Web",
+      "tools": [
+        {
+          "id": "sqlmap",
+          "name": "SQLMap",
+          "description": "Détection d'injections SQL.",
+          "program": "sqlmap",
+          "runner": "kali",
+          "params": [
+            {
+              "type": "text",
+              "id": "url",
+              "label": "URL",
+              "flag": "-u",
+              "required": true,
+              "placeholder": "http://cible/page.php?id=1"
+            },
+            {
+              "type": "choice",
+              "id": "level",
+              "label": "Intensité",
+              "options": [
+                {
+                  "label": "1 (légère)",
+                  "args": [
+                    "--level=1"
+                  ]
+                },
+                {
+                  "label": "3",
+                  "args": [
+                    "--level=3"
+                  ]
+                },
+                {
+                  "label": "5 (lourde)",
+                  "args": [
+                    "--level=5"
+                  ]
+                }
+              ],
+              "default": 0
+            },
+            {
+              "type": "flag",
+              "id": "batch",
+              "label": "Réponses par défaut",
+              "args": [
+                "--batch"
+              ]
+            },
+            {
+              "type": "flag",
+              "id": "dbs",
+              "label": "Lister les bases",
+              "args": [
+                "--dbs"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "nikto",
+          "name": "Nikto",
+          "description": "Analyse de la configuration d'un serveur web.",
+          "program": "nikto",
+          "runner": "kali",
+          "params": [
+            {
+              "type": "text",
+              "id": "host",
+              "label": "Hôte",
+              "flag": "-h",
+              "required": true
+            },
+            {
+              "type": "flag",
+              "id": "ssl",
+              "label": "HTTPS",
+              "args": [
+                "-ssl"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Réseau",
+      "tools": [
+        {
+          "id": "tcpdump",
+          "name": "Tcpdump",
+          "description": "Capture de paquets vers un fichier.",
+          "program": "tcpdump",
+          "runner": "host",
+          "sudo": true,
+          "terminal": true,
+          "params": [
+            {
+              "type": "text",
+              "id": "iface",
+              "label": "Interface",
+              "flag": "-i",
+              "default": "any"
+            },
+            {
+              "type": "text",
+              "id": "out",
+              "label": "Fichier .pcap",
+              "flag": "-w",
+              "placeholder": "capture.pcap"
+            }
+          ]
+        },
+        {
+          "id": "nc",
+          "name": "Netcat",
+          "description": "Écoute ou connexion TCP brute.",
+          "program": "nc",
+          "runner": "host",
+          "terminal": true,
+          "params": [
+            {
+              "type": "choice",
+              "id": "mode",
+              "label": "Mode",
+              "options": [
+                {
+                  "label": "Connexion",
+                  "args": [
+                    "-v"
+                  ]
+                },
+                {
+                  "label": "Écoute",
+                  "args": [
+                    "-lvnp"
+                  ]
+                }
+              ],
+              "default": 0
+            },
+            {
+              "type": "text",
+              "id": "host",
+              "label": "Hôte (connexion)"
+            },
+            {
+              "type": "text",
+              "id": "port",
+              "label": "Port",
+              "required": true
+            }
+          ]
+        },
+        {
+          "id": "aircrack",
+          "name": "Aircrack-ng",
+          "description": "Audit de la clé d'un réseau Wi-Fi à partir d'une capture.",
+          "program": "aircrack-ng",
+          "runner": "kali",
+          "params": [
+            {
+              "type": "text",
+              "id": "wordlist",
+              "label": "Liste de mots",
+              "flag": "-w",
+              "required": true
+            },
+            {
+              "type": "text",
+              "id": "cap",
+              "label": "Fichier de capture",
+              "required": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Kali",
+      "tools": [
+        {
+          "id": "msfconsole",
+          "name": "Metasploit",
+          "description": "Console Metasploit dans la Kali isolée.",
+          "program": "msfconsole",
+          "runner": "kali",
+          "terminal": true,
+          "params": []
+        },
+        {
+          "id": "kali-shell",
+          "name": "Terminal Kali",
+          "description": "Ouvre un terminal dans la Kali isolée.",
+          "program": "bash",
+          "runner": "kali",
+          "terminal": true,
+          "params": []
+        }
+      ]
+    }
+  ]
+}

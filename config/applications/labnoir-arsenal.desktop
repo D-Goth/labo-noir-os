@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=Arsenal
+GenericName=Lanceur d'outils de sécurité
+Comment=Lance les outils d'analyse et de test, sur le système ou dans la Kali isolée
+Exec=/usr/local/bin/arsenal
+Icon=labonoir
+Terminal=false
+Categories=System;Security;Network;
+Keywords=nmap;pentest;sécurité;kali;outils;

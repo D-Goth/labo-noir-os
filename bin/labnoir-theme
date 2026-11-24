@@ -1,0 +1,406 @@
+#!/usr/bin/env python3
+import argparse
+import os
+import re
+import shutil
+import subprocess
+import sys
+import tomllib
+import unicodedata
+from dataclasses import dataclass
+from pathlib import Path
+
+# [THM-01]
+REPO = Path(__file__).resolve().parent.parent
+PREFIX = Path(os.environ.get("LABNOIR_PREFIX", "/opt/labnoir"))
+CONFIG_HOME = Path(os.environ.get("XDG_CONFIG_HOME", Path.home() / ".config"))
+DATA_HOME = Path(os.environ.get("XDG_DATA_HOME", Path.home() / ".local" / "share"))
+THEME_DIRS = [DATA_HOME / "labnoir" / "themes", PREFIX / "themes", REPO / "themes"]
+WALLPAPER_DIRS = [DATA_HOME / "labnoir" / "wallpapers", PREFIX / "desktop" / "wallpapers", REPO / "desktop" / "wallpapers"]
+STATE = CONFIG_HOME / "labnoir" / "theme"
+HEX = re.compile(r"^#[0-9a-fA-F]{6}$")
+
+# [THM-02]
+BUTTONS = {
+    "elementary": ("X", "A"),
+    "macos": ("XIA", ""),
+    "classique": ("M", "IAX"),
+}
+
+
+# [THM-03]
+@dataclass
+class Theme:
+    ident: str
+    name: str
+    mode: str
+    accent: str
+    blur: int
+    noise: int
+    terminal_opacity: float
+    buttons: str
+    wallpaper: Path | None
+    orbit_alpha: int
+
+
+def find_theme(ident):
+    for d in THEME_DIRS:
+        p = d / f"{ident}.toml"
+        if p.is_file():
+            return p
+    return None
+
+
+def all_themes():
+    seen = {}
+    for d in reversed(THEME_DIRS):
+        if d.is_dir():
+            for p in sorted(d.glob("*.toml")):
+                seen[p.stem] = p
+    return dict(sorted(seen.items()))
+
+
+def find_wallpaper(name):
+    if not name:
+        return None
+    p = Path(os.path.expanduser(name))
+    if p.is_absolute():
+        return p if p.is_file() else None
+    for d in WALLPAPER_DIRS:
+        if (d / name).is_file():
+            return d / name
+    return None
+
+
+# [THM-04]
+def load(ident):
+    path = find_theme(ident)
+    if not path:
+        raise SystemExit(f"thème introuvable : {ident} (voir « labnoir-theme list »)")
+    with open(path, "rb") as f:
+        data = tomllib.load(f)
+    glass = data.get("verre", {})
+    accent = str(data.get("accent", "#FF1654"))
+    if not HEX.match(accent):
+        raise SystemExit(f"{path} : accent invalide « {accent} » (format #RRGGBB)")
+    mode = data.get("mode", "sombre")
+    if mode not in ("sombre", "clair"):
+        raise SystemExit(f"{path} : mode « {mode} » inconnu (sombre ou clair)")
+    buttons = data.get("fenetres", {}).get("boutons", "elementary")
+    if buttons not in BUTTONS:
+        raise SystemExit(f"{path} : boutons « {buttons} » inconnus ({', '.join(BUTTONS)})")
+    return Theme(
+        ident=ident,
+        name=str(data.get("nom", ident)),
+        mode=mode,
+        accent=accent.upper(),
+        blur=max(1, min(15, int(glass.get("flou", 10)))),
+        noise=max(0, min(14, int(glass.get("bruit", 2)))),
+        terminal_opacity=max(0.5, min(1.0, float(glass.get("opacite_terminal", 0.86)))),
+        buttons=buttons,
+        wallpaper=find_wallpaper(data.get("fond", {}).get("image", "")),
+        orbit_alpha=max(0, min(255, int(data.get("orbit", {}).get("transparence", 190)))),
+    )
+
+
+# [THM-05]
+def rgb(hexa):
+    h = hexa.lstrip("#")
+    return tuple(int(h[i : i + 2], 16) for i in (0, 2, 4))
+
+
+def mix(a, b, t):
+    ra, rb = rgb(a), rgb(b)
+    return "#" + "".join(f"{round(x + (y - x) * t):02X}" for x, y in zip(ra, rb))
+
+
+def kde(hexa):
+    return ",".join(str(c) for c in rgb(hexa))
+
+
+def luminance(hexa):
+    def ch(c):
+        c /= 255
+        return c / 12.92 if c <= 0.03928 else ((c + 0.055) / 1.055) ** 2.4
+
+    r, g, b = (ch(c) for c in rgb(hexa))
+    return 0.2126 * r + 0.7152 * g + 0.0722 * b
+
+
+# [THM-06]
+PALETTES = {
+    "sombre": {
+        "window": "#111113", "view": "#0B0B0D", "alt": "#17171A", "button": "#1C1C20",
+        "header": "#141417", "tooltip": "#0E0E10", "fg": "#E8E8EC", "inactive": "#8C8C95",
+        "positive": "#2BD67B", "neutral": "#F5B33F", "negative": "#E5484D",
+    },
+    "clair": {
+        "window": "#F3F3F6", "view": "#FFFFFF", "alt": "#ECECF0", "button": "#FAFAFC",
+        "header": "#EDEDF1", "tooltip": "#FFFFFF", "fg": "#1C1C1F", "inactive": "#6B6B74",
+        "positive": "#1E9E5A", "neutral": "#B7791F", "negative": "#D93036",
+    },
+}
+
+
+def render_colors(t, scheme_id="LabONoir"):
+    p = PALETTES[t.mode]
+    sel_fg = "#000000" if luminance(t.accent) > 0.55 else "#FFFFFF"
+    visited = mix(t.accent, p["fg"], 0.45)
+    hover = mix(t.accent, "#FFFFFF", 0.25)
+
+    def block(bg, alt, fg=p["fg"], inactive=p["inactive"]):
+        return [
+            f"BackgroundAlternate={kde(alt)}",
+            f"BackgroundNormal={kde(bg)}",
+            f"DecorationFocus={kde(t.accent)}",
+            f"DecorationHover={kde(hover)}",
+            f"ForegroundActive={kde(t.accent)}",
+            f"ForegroundInactive={kde(inactive)}",
+            f"ForegroundLink={kde(t.accent)}",
+            f"ForegroundNegative={kde(p['negative'])}",
+            f"ForegroundNeutral={kde(p['neutral'])}",
+            f"ForegroundNormal={kde(fg)}",
+            f"ForegroundPositive={kde(p['positive'])}",
+            f"ForegroundVisited={kde(visited)}",
+        ]
+
+    sections = {
+        "ColorEffects:Disabled": [
+            "Color=56,56,56", "ColorAmount=0", "ColorEffect=0", "ContrastAmount=0.65",
+            "ContrastEffect=1", "IntensityAmount=0.1", "IntensityEffect=2",
+        ],
+        "ColorEffects:Inactive": [
+            "ChangeSelectionColor=true", "Color=112,111,110", "ColorAmount=0.025", "ColorEffect=2",
+            "ContrastAmount=0.1", "ContrastEffect=2", "Enable=false", "IntensityAmount=0", "IntensityEffect=0",
+        ],
+        "Colors:Button": block(p["button"], p["alt"]),
+        "Colors:Complementary": block(PALETTES["sombre"]["view"], PALETTES["sombre"]["alt"],
+                                      PALETTES["sombre"]["fg"], PALETTES["sombre"]["inactive"]),
+        "Colors:Header": block(p["header"], p["window"]),
+        "Colors:Header][Inactive": block(p["window"], p["header"]),
+        "Colors:Selection": block(t.accent, mix(t.accent, p["view"], 0.2), sel_fg, mix(sel_fg, t.accent, 0.35)),
+        "Colors:Tooltip": block(p["tooltip"], p["alt"]),
+        "Colors:View": block(p["view"], p["alt"]),
+        "Colors:Window": block(p["window"], p["alt"]),
+        "General": [f"ColorScheme={scheme_id}", f"Name=Lab'O Noir : {t.name}", "shadeSortColumn=true"],
+        "KDE": ["contrast=4"],
+        "WM": [
+            f"activeBackground={kde(p['header'])}",
+            f"activeBlend={kde(p['fg'])}",
+            f"activeForeground={kde(p['fg'])}",
+            f"inactiveBackground={kde(p['window'])}",
+            f"inactiveBlend={kde(p['inactive'])}",
+            f"inactiveForeground={kde(p['inactive'])}",
+        ],
+    }
+    out = []
+    for name, lines in sections.items():
+        out.append(f"[{name}]")
+        out.extend(lines)
+        out.append("")
+    return "\n".join(out)
+
+
+# [THM-07]
+def render_konsole(t):
+    dark = t.mode == "sombre"
+    bg = "#0B0B0D" if dark else "#FBFBFC"
+    fg = "#E8E8EC" if dark else "#1C1C1F"
+    base = [
+        "#1C1C20" if dark else "#3A3A40", t.accent, "#2BD67B" if dark else "#1E9E5A",
+        "#F5B33F" if dark else "#B7791F", "#4F8CFF" if dark else "#2563EB", "#B57BFF" if dark else "#8B3FD9",
+        "#3CCFCF" if dark else "#0E8A8A", "#C8C8D0" if dark else "#55555C",
+    ]
+    lines = [
+        "[General]",
+        f"Description=Lab'O Noir : {t.name}",
+        f"Opacity={t.terminal_opacity:.2f}",
+        "Blur=true",
+        "Wallpaper=",
+        "",
+        "[Background]", f"Color={kde(bg)}", "",
+        "[BackgroundFaint]", f"Color={kde(bg)}", "",
+        "[BackgroundIntense]", f"Color={kde(mix(bg, fg, 0.06))}", "",
+        "[Foreground]", f"Color={kde(fg)}", "",
+        "[ForegroundFaint]", f"Color={kde(mix(fg, bg, 0.35))}", "",
+        "[ForegroundIntense]", f"Color={kde(mix(fg, '#FFFFFF' if dark else '#000000', 0.5))}", "",
+    ]
+    for i, c in enumerate(base):
+        bright = mix(c, "#FFFFFF" if dark else "#000000", 0.25)
+        lines += [f"[Color{i}]", f"Color={kde(c)}", "", f"[Color{i}Faint]", f"Color={kde(mix(c, bg, 0.4))}", "",
+                  f"[Color{i}Intense]", f"Color={kde(bright)}", ""]
+    return "\n".join(lines)
+
+
+# [THM-08]
+def tool(*names):
+    for n in names:
+        if shutil.which(n):
+            return n
+    return None
+
+
+def kwrite(file, group, key, value):
+    exe = tool("kwriteconfig6", "kwriteconfig5")
+    if not exe:
+        return False
+    return subprocess.run([exe, "--file", file, "--group", group, "--key", key, str(value)]).returncode == 0
+
+
+def kread(file, group, key):
+    exe = tool("kreadconfig6", "kreadconfig5")
+    if not exe:
+        return ""
+    r = subprocess.run([exe, "--file", file, "--group", group, "--key", key], capture_output=True, text=True)
+    return r.stdout.strip()
+
+
+def write(path, text):
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = path.with_suffix(path.suffix + ".tmp")
+    tmp.write_text(text, encoding="utf-8")
+    tmp.replace(path)
+
+
+def report(ok, label, detail=""):
+    mark = "✓" if ok else "!"
+    print(f"  {mark} {label}" + (f" : {detail}" if detail else ""))
+
+
+# [THM-09]
+def apply(t, with_wallpaper=False):
+    print(f"Thème « {t.name} »")
+    current = kread("kdeglobals", "General", "ColorScheme")
+    scheme = "LabONoirB" if current == "LabONoir" else "LabONoir"
+    write(DATA_HOME / "color-schemes" / f"{scheme}.colors", render_colors(t, scheme))
+    other = DATA_HOME / "color-schemes" / ("LabONoir.colors" if scheme == "LabONoirB" else "LabONoirB.colors")
+    exe = tool("plasma-apply-colorscheme")
+    if exe:
+        r = subprocess.run([exe, scheme], capture_output=True, text=True)
+        report(r.returncode == 0, "couleurs", "accent " + t.accent)
+    else:
+        report(kwrite("kdeglobals", "General", "ColorScheme", scheme), "couleurs", "appliquées à la prochaine session")
+    if other.exists() and current != other.stem:
+        other.unlink()
+
+    icons = "Papirus-Dark" if t.mode == "sombre" else "Papirus"
+    report(kwrite("kdeglobals", "Icons", "Theme", icons), "icônes", icons)
+
+    write(DATA_HOME / "konsole" / "LabONoir.colorscheme", render_konsole(t))
+    report(True, "terminal", f"opacité {round(t.terminal_opacity * 100)} %")
+
+    left, right = BUTTONS[t.buttons]
+    ok = all([
+        kwrite("kwinrc", "Plugins", "blurEnabled", "true"),
+        kwrite("kwinrc", "Effect-blur", "BlurStrength", t.blur),
+        kwrite("kwinrc", "Effect-blur", "NoiseStrength", t.noise),
+        kwrite("kwinrc", "org.kde.kdecoration2", "ButtonsOnLeft", left),
+        kwrite("kwinrc", "org.kde.kdecoration2", "ButtonsOnRight", right),
+    ])
+    if tool("dbus-send"):
+        subprocess.run(["dbus-send", "--session", "--type=method_call", "--dest=org.kde.KWin",
+                        "/KWin", "org.kde.KWin.reconfigure"], capture_output=True)
+    report(ok, "verre dépoli et fenêtres", f"flou {t.blur}, boutons {t.buttons}")
+
+    if with_wallpaper and t.wallpaper and tool("plasma-apply-wallpaperimage"):
+        r = subprocess.run(["plasma-apply-wallpaperimage", str(t.wallpaper)], capture_output=True, text=True)
+        report(r.returncode == 0, "fond d'écran", t.wallpaper.name)
+
+    ok = kwrite("orbitpixelrc", "General", "accent", t.accent.lower()) and kwrite(
+        "orbitpixelrc", "General", "bgAlpha", t.orbit_alpha)
+    report(ok, "Orbit Pixel", "accent et transparence")
+
+    write(STATE, t.ident + "\n")
+    return 0
+
+
+# [THM-11]
+USER_THEMES = DATA_HOME / "labnoir" / "themes"
+
+
+def slug(name):
+    s = unicodedata.normalize("NFKD", name).encode("ascii", "ignore").decode().lower()
+    s = re.sub(r"[^a-z0-9]+", "-", s).strip("-")
+    return s or "mon-theme"
+
+
+def dump(t):
+    def q(v):
+        return '"' + str(v).replace("\\", "\\\\").replace('"', '\\"') + '"'
+
+    lines = [
+        f"nom = {q(t.name)}",
+        f"mode = {q(t.mode)}",
+        f"accent = {q(t.accent)}",
+        "",
+        "[verre]",
+        f"flou = {t.blur}",
+        f"bruit = {t.noise}",
+        f"opacite_terminal = {t.terminal_opacity:.2f}",
+        "",
+        "[fenetres]",
+        f"boutons = {q(t.buttons)}",
+        "",
+        "[fond]",
+        f"image = {q(t.wallpaper or '')}",
+        "",
+        "[orbit]",
+        f"transparence = {t.orbit_alpha}",
+    ]
+    return "\n".join(lines) + "\n"
+
+
+def save(t):
+    path = USER_THEMES / f"{t.ident}.toml"
+    write(path, dump(t))
+    return path
+
+
+def is_user_theme(ident):
+    return (USER_THEMES / f"{ident}.toml").is_file()
+
+
+def current_theme():
+    try:
+        return STATE.read_text(encoding="utf-8").strip()
+    except OSError:
+        return ""
+
+
+# [THM-10]
+def main(argv=None):
+    ap = argparse.ArgumentParser(prog="labnoir-theme", description="Thèmes du bureau Lab'O Noir")
+    sub = ap.add_subparsers(dest="cmd", required=True)
+    sub.add_parser("list", help="liste les thèmes")
+    sub.add_parser("current", help="affiche le thème actif")
+    a = sub.add_parser("apply", help="applique un thème à la session")
+    a.add_argument("theme")
+    a.add_argument("--fond", action="store_true", help="remplace aussi le fond d'écran par celui du thème")
+    r = sub.add_parser("render", help="écrit un fichier de couleurs (installation)")
+    r.add_argument("kind", choices=["colors", "konsole"])
+    r.add_argument("theme")
+    r.add_argument("output", type=Path)
+    args = ap.parse_args(argv)
+
+    if args.cmd == "list":
+        cur = current_theme()
+        for ident, path in all_themes().items():
+            t = load(ident)
+            mark = "●" if ident == cur else " "
+            print(f"{mark} {ident:<14} {t.name:<16} {t.mode:<7} {t.accent}  {path.parent}")
+        return 0
+    if args.cmd == "current":
+        print(current_theme() or "labonoir")
+        return 0
+    if args.cmd == "apply":
+        if os.geteuid() == 0:
+            raise SystemExit("à lancer depuis ta session, sans sudo")
+        return apply(load(args.theme), args.fond)
+    t = load(args.theme)
+    text = render_colors(t) if args.kind == "colors" else render_konsole(t)
+    write(args.output, text)
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

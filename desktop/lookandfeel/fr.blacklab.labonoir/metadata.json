@@ -1,0 +1,14 @@
+{
+    "KPackageStructure": "Plasma/LookAndFeel",
+    "KPlugin": {
+        "Authors": [{ "Name": "D-Goth", "Email": "" }],
+        "Category": "",
+        "Description": "Bureau épuré de Lab'O Noir OS : barre fine en haut, dock flottant, verre dépoli",
+        "Id": "fr.blacklab.labonoir",
+        "License": "GPL-3.0-or-later",
+        "Name": "Lab'O Noir",
+        "Version": "1.0",
+        "Website": "https://black-lab.fr"
+    },
+    "X-Plasma-MainScript": "defaults"
+}

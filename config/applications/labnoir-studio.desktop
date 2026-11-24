@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=Studio Lab'O Noir
+GenericName=Thèmes du bureau
+Comment=Accent, verre dépoli, boutons des fenêtres et fond d'écran, avec aperçu en direct
+Exec=/usr/local/bin/labnoir-studio
+Icon=labonoir
+Terminal=false
+Categories=Settings;DesktopSettings;Qt;KDE;
+Keywords=thème;couleur;accent;flou;fond;apparence;

@@ -1,0 +1,20 @@
+{
+    "KPlugin": {
+        "Authors": [
+            {
+                "Name": "D-Goth",
+                "Name[fr]": "D-Goth"
+            }
+        ],
+        "Category": "System Information",
+        "Description": "Modules circulaires Orbit Pixel (port du pack Rainmeter de D-Goth)",
+        "Icon": "preferences-desktop-color",
+        "Id": "fr.blacklab.orbitpixel",
+        "License": "GPL-3.0+",
+        "Name": "Orbit Pixel",
+        "Version": "0.3.1",
+        "Website": "https://black-lab.fr"
+    },
+    "KPackageStructure": "Plasma/Applet",
+    "X-Plasma-API-Minimum-Version": "6.0"
+}

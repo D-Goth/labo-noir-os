@@ -23,10 +23,10 @@ ne pas le modifier à la main.
 |---|---|---|
 | [`INS`](#ins) | Installateur principal (install.sh) | 6 |
 | [`LIB`](#lib) | Bibliothèque commune des modules (lib/common.sh) | 11 |
-| [`BAS`](#bas) | Module base | 1 |
+| [`BAS`](#bas) | Module base | 3 |
 | [`PRV`](#prv) | Confidentialité : module et outil labnoir-privacy | 7 |
-| [`DSK`](#dsk) | Bureau : module, look-and-feel Plasma, première connexion | 10 |
-| [`THM`](#thm) | Gestionnaire de thèmes labnoir-theme | 11 |
+| [`DSK`](#dsk) | Bureau : module, look-and-feel Plasma, première connexion | 11 |
+| [`THM`](#thm) | Gestionnaire de thèmes labnoir-theme | 13 |
 | [`STU`](#stu) | Studio Lab'O Noir, éditeur graphique de thèmes (studio/studio.py) | 7 |
 | [`DEV`](#dev) | Module développement | 1 |
 | [`DEF`](#def) | Module défense | 1 |
@@ -344,6 +344,8 @@ Outils de base, Flathub, copie des outils, thèmes et ressources dans /opt/labno
 module_run() {
     apt_install_list base
     flatpak_ready
+    bas_guest_tools
+    bas_browser
 
     run mkdir -p "$LABNOIR_PREFIX" "$LABNOIR_ETC"
     put_dir "$LABNOIR_ROOT/bin" "$LABNOIR_PREFIX/bin"
@@ -351,9 +353,44 @@ module_run() {
     put_dir "$LABNOIR_ROOT/desktop" "$LABNOIR_PREFIX/desktop"
     run chmod 0755 "$LABNOIR_PREFIX"/bin/*
     local tool
-    for tool in labnoir-theme labnoir-privacy labnoir-redteam; do
-        link_bin "$tool"
 …
+```
+
+### [BAS-02] Outils invités des machines virtuelles
+
+Repère l'hyperviseur (systemd-detect-virt) et installe ses outils : open-vm-tools-desktop pour VMware, spice-vdagent pour QEMU/KVM, Additions invité pour VirtualBox. L'écran suit alors la taille de la fenêtre.
+
+`modules/10-base.sh` ligne 27
+
+```bash
+bas_guest_tools() {
+    local virt
+    virt="$(systemd-detect-virt 2>/dev/null || true)"
+    case "$virt" in
+        vmware) apt_install open-vm-tools open-vm-tools-desktop ;;
+        kvm | qemu) apt_install spice-vdagent qemu-guest-agent ;;
+        oracle) apt_install virtualbox-guest-x11 virtualbox-guest-utils ;;
+        *) return 0 ;;
+    esac
+    ok "machine virtuelle $virt : outils invités installés (taille d'écran automatique après redémarrage)"
+}
+```
+
+### [BAS-03] Navigateur
+
+Installe Zen Browser depuis Flathub et le choisit comme navigateur par défaut du compte cible.
+
+`modules/10-base.sh` ligne 40
+
+```bash
+bas_browser() {
+    flatpak_install app.zen_browser.zen
+    if [[ -n "$(target_user)" ]]; then
+        as_user xdg-settings set default-web-browser app.zen_browser.zen.desktop \
+            || warn "Zen non défini comme navigateur par défaut : Configuration du système > Applications par défaut"
+    fi
+    ok "Zen Browser installé et choisi comme navigateur par défaut"
+}
 ```
 
 
@@ -538,7 +575,7 @@ module_run() {
 
 Génère le jeu de couleurs et le thème du terminal du thème choisi, et installe le profil Konsole.
 
-`modules/30-bureau.sh` ligne 25
+`modules/30-bureau.sh` ligne 26
 
 ```bash
 dsk_render_defaults() {
@@ -555,7 +592,7 @@ dsk_render_defaults() {
 
 kdeglobals, kwinrc (flou, bordures, boutons réduire, agrandir et fermer à droite), konsolerc et plasmarc dans /etc/xdg : ils valent pour tout nouveau compte.
 
-`modules/30-bureau.sh` ligne 44
+`modules/30-bureau.sh` ligne 45
 
 ```bash
 dsk_system_defaults() {
@@ -570,7 +607,7 @@ dsk_system_defaults() {
 
 SDDM avec le thème Breeze et le fond Lab'O Noir.
 
-`modules/30-bureau.sh` ligne 52
+`modules/30-bureau.sh` ligne 53
 
 ```bash
 dsk_sddm() {
@@ -590,7 +627,7 @@ dsk_sddm() {
 
 Installe le lanceur automatique et remet à zéro le marqueur du compte cible pour réappliquer le bureau.
 
-`modules/30-bureau.sh` ligne 65
+`modules/30-bureau.sh` ligne 86
 
 ```bash
 dsk_first_login() {
@@ -690,7 +727,7 @@ conf() { [[ -f "$CONF" ]] && sed -n "s|^$1=||p" "$CONF" | tail -n1; }
 
 Copie le studio dans /opt/labnoir/studio, crée la commande labnoir-studio et son entrée dans le menu des applications.
 
-`modules/30-bureau.sh` ligne 35
+`modules/30-bureau.sh` ligne 36
 
 ```bash
 dsk_studio() {
@@ -702,6 +739,28 @@ dsk_studio() {
 }
 ```
 
+### [DSK-11] Chargement de l'invite
+
+Ajoute une seule fois le chargement de l'invite Lab'O Noir au .bashrc du compte cible et à celui des futurs comptes (/etc/skel).
+
+`modules/30-bureau.sh` ligne 66
+
+```bash
+dsk_prompt() {
+    # shellcheck disable=SC2016
+    local line='[ -f "$HOME/.config/labnoir/prompt.sh" ] && . "$HOME/.config/labnoir/prompt.sh"'
+    local f home
+    home="$(target_home)"
+    for f in /etc/skel/.bashrc ${home:+"$home/.bashrc"}; do
+        [[ -f "$f" ]] || continue
+        if grep -qF '.config/labnoir/prompt.sh' "$f"; then
+            continue
+        fi
+        if [[ "$LABNOIR_DRY_RUN" == 1 ]]; then
+            info "$f : invite Lab'O Noir"
+…
+```
+
 
 ## THM
 
@@ -711,7 +770,7 @@ Gestionnaire de thèmes labnoir-theme
 
 Thèmes et fonds cherchés dans ~/.local/share/labnoir, /opt/labnoir puis le dépôt ; fichier du thème actif.
 
-`bin/labnoir-theme` ligne 13
+`bin/labnoir-theme` ligne 15
 
 ```python
 REPO = Path(__file__).resolve().parent.parent
@@ -721,7 +780,7 @@ REPO = Path(__file__).resolve().parent.parent
 
 Dispositions classique (réduire, agrandir et fermer à droite, par défaut), elementary (fermer à gauche, agrandir à droite) et macos (tout à gauche).
 
-`bin/labnoir-theme` ligne 23
+`bin/labnoir-theme` ligne 25
 
 ```python
 BUTTONS = {
@@ -735,7 +794,7 @@ BUTTONS = {
 
 Nom, mode sombre ou clair, accent, flou et bruit du verre dépoli, opacité du terminal, boutons, fond d'écran, transparence d'Orbit Pixel.
 
-`bin/labnoir-theme` ligne 31
+`bin/labnoir-theme` ligne 33
 
 ```python
 @dataclass
@@ -745,7 +804,7 @@ Nom, mode sombre ou clair, accent, flou et bruit du verre dépoli, opacité du t
 
 Lit le fichier TOML, vérifie l'accent (#RRGGBB), le mode et les boutons, borne les valeurs.
 
-`bin/labnoir-theme` ligne 75
+`bin/labnoir-theme` ligne 77
 
 ```python
 def load(ident):
@@ -767,7 +826,7 @@ def load(ident):
 
 Conversion hexadécimale, mélange de deux couleurs, format KDE et luminance.
 
-`bin/labnoir-theme` ligne 106
+`bin/labnoir-theme` ligne 108
 
 ```python
 def rgb(hexa):
@@ -779,7 +838,7 @@ def rgb(hexa):
 
 Palettes sombre et claire, et génération du fichier .colors avec l'accent (sélection, liens, focus) et un texte de sélection lisible.
 
-`bin/labnoir-theme` ligne 130
+`bin/labnoir-theme` ligne 132
 
 ```python
 PALETTES = {
@@ -801,7 +860,7 @@ PALETTES = {
 
 Couleurs Konsole assorties, accent en rouge ANSI, opacité et flou.
 
-`bin/labnoir-theme` ligne 204
+`bin/labnoir-theme` ligne 206
 
 ```python
 def render_konsole(t):
@@ -823,7 +882,7 @@ def render_konsole(t):
 
 Recherche des outils KDE, lecture et écriture de réglages, écriture atomique de fichiers, compte rendu.
 
-`bin/labnoir-theme` ligne 235
+`bin/labnoir-theme` ligne 237
 
 ```python
 def tool(*names):
@@ -835,9 +894,9 @@ def tool(*names):
 
 ### [THM-09] Application
 
-Couleurs (en alternant deux noms pour forcer Plasma à recharger), icônes, terminal, flou et boutons de KWin, accent et transparence d'Orbit Pixel, mémorisation du thème. Le fond d'écran n'est remplacé qu'avec --fond (première connexion), pour garder celui choisi par l'utilisateur.
+Couleurs (en alternant deux noms pour forcer Plasma à recharger), icônes, terminal, flou et boutons de KWin, accent et transparence d'Orbit Pixel, invite du terminal, cool-retro-term s'il est installé, mémorisation du thème. Le fond d'écran n'est remplacé qu'avec --fond (première connexion), pour garder celui choisi par l'utilisateur.
 
-`bin/labnoir-theme` ligne 270
+`bin/labnoir-theme` ligne 272
 
 ```python
 def apply(t, with_wallpaper=False):
@@ -859,7 +918,7 @@ def apply(t, with_wallpaper=False):
 
 list, current, apply (depuis la session) et render (pour l'installateur).
 
-`bin/labnoir-theme` ligne 370
+`bin/labnoir-theme` ligne 425
 
 ```python
 def main(argv=None):
@@ -881,10 +940,31 @@ def main(argv=None):
 
 Dossier ~/.local/share/labnoir/themes, identifiant tiré du nom (sans accents ni espaces), écriture d'un thème en TOML et repérage des thèmes personnels (modifiables et supprimables).
 
-`bin/labnoir-theme` ligne 317
+`bin/labnoir-theme` ligne 372
 
 ```python
 USER_THEMES = DATA_HOME / "labnoir" / "themes"
+```
+
+### [THM-12] Invite du terminal
+
+Génère ~/.config/labnoir/prompt.sh : utilisateur à l'accent, machine atténuée, dossier, flèche à l'accent, en couleurs 24 bits ; chargé par les shells interactifs.
+
+`bin/labnoir-theme` ligne 323
+
+```python
+def ansi(hexa):
+    return ";".join(str(c) for c in rgb(hexa))
+```
+
+### [THM-13] cool-retro-term
+
+Met le texte à l'accent et le fond du thème dans le profil courant de cool-retro-term (sa base de réglages SQLite), seulement s'il est fermé et a déjà été lancé une fois.
+
+`bin/labnoir-theme` ligne 338
+
+```python
+CRT_DB = DATA_HOME / "cool-retro-term" / "cool-retro-term" / "QML" / "OfflineStorage" / "Databases"
 ```
 
 

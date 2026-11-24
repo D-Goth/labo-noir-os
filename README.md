@@ -2,7 +2,7 @@
 
 Un poste de travail Debian sobre et soigné pour les développeurs et la cyberdéfense.
 
-Lab'O Noir s'installe par-dessus une **Debian 13 avec KDE Plasma 6** : un bureau épuré façon elementary OS,
+Lab'O Noir s'installe par-dessus une **Debian 13 avec KDE Plasma 6** ou une **Kubuntu 26.04** : un bureau épuré façon elementary OS,
 avec verre dépoli et thèmes à la carte, les outils de défense sur le système, les outils offensifs isolés
 dans une Kali en conteneur ou en machine virtuelle, une messagerie sans inscription, et aucun recueil de
 date de naissance ni de télémétrie.
@@ -27,7 +27,7 @@ date de naissance ni de télémétrie.
 
 ## Installation
 
-1. Installe **Debian 13** en choisissant l'environnement **KDE Plasma** (ou ajoute-le ensuite avec `sudo apt install task-kde-desktop`).
+1. Installe **Debian 13** en choisissant l'environnement **KDE Plasma** (ou ajoute-le ensuite avec `sudo apt install task-kde-desktop`), ou bien **Kubuntu 26.04**.
 2. Depuis ta session :
 
 ```bash

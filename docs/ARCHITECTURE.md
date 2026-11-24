@@ -1,6 +1,6 @@
 # Architecture de Lab'O Noir OS
 
-Lab'O Noir est une surcouche : il part d'une Debian 13 + Plasma 6 standard et la transforme par des modules
+Lab'O Noir est une surcouche : il part d'une Debian 13 + Plasma 6 standard (ou d'une Kubuntu 26.04) et la transforme par des modules
 indépendants. Les mêmes modules serviront à fabriquer l'ISO (voir la [ROADMAP](../ROADMAP.md)).
 
 ## Dépôt
@@ -91,8 +91,8 @@ génère `docs/NOMENCLATURE.md` avec un extrait de chaque élément ; la CI vér
 ## Vérifications
 
 La CI (`.github/workflows/ci.yml`) lance ShellCheck, compile le Python, vérifie la nomenclature,
-fait une simulation complète de l'installateur et vérifie toutes les listes de paquets dans un
-conteneur `debian:trixie`.
+fait une simulation complète de l'installateur et vérifie toutes les listes de paquets dans des
+conteneurs `debian:trixie` et `ubuntu:26.04`.
 
 Non vérifié automatiquement : le rendu réel du bureau (look-and-feel, disposition, flou) demande une
 session Plasma 6 ; à tester dans une VM Debian 13 avant chaque version.

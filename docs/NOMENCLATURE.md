@@ -24,7 +24,7 @@ ne pas le modifier à la main.
 | [`INS`](#ins) | Installateur principal (install.sh) | 6 |
 | [`LIB`](#lib) | Bibliothèque commune des modules (lib/common.sh) | 11 |
 | [`BAS`](#bas) | Module base | 1 |
-| [`PRV`](#prv) | Confidentialité : module et outil labnoir-privacy | 6 |
+| [`PRV`](#prv) | Confidentialité : module et outil labnoir-privacy | 7 |
 | [`DSK`](#dsk) | Bureau : module, look-and-feel Plasma, première connexion | 9 |
 | [`THM`](#thm) | Gestionnaire de thèmes labnoir-theme | 10 |
 | [`DEV`](#dev) | Module développement | 1 |
@@ -70,7 +70,7 @@ usage() {
     cat <<EOF
 Lab'O Noir OS : installateur
 
-Transforme une Debian 13 avec KDE Plasma 6 en poste Lab'O Noir.
+Transforme une Debian 13 ou une Kubuntu 26.04 (KDE Plasma 6) en poste Lab'O Noir.
 
 Usage : sudo ./install.sh [options]
 
@@ -102,13 +102,13 @@ Droits root (sauf simulation), système Debian 13 (ou --force), compte à person
 ```bash
 [[ $EUID -eq 0 || "$LABNOIR_DRY_RUN" == 1 ]] || die "lance l'installateur avec sudo : sudo ./install.sh"
 
-if ! is_debian13; then
+if ! is_supported; then
     if ((FORCE)); then
-        warn "système détecté : $(os_field PRETTY_NAME). Lab'O Noir vise Debian 13 : on continue (--force)."
+        warn "système détecté : $(os_field PRETTY_NAME). Lab'O Noir vise Debian 13 et Kubuntu 26.04 : on continue (--force)."
     elif [[ "$LABNOIR_DRY_RUN" == 1 ]]; then
-        warn "système détecté : $(os_field PRETTY_NAME), pas Debian 13 (simulation seulement)"
+        warn "système détecté : $(os_field PRETTY_NAME), ni Debian 13 ni Kubuntu 26.04 (simulation seulement)"
     else
-        die "Lab'O Noir vise Debian 13 (système détecté : $(os_field PRETTY_NAME)). Relance avec --force pour essayer quand même."
+        die "Lab'O Noir vise Debian 13 et Kubuntu 26.04 (système détecté : $(os_field PRETTY_NAME)). Relance avec --force pour essayer quand même."
     fi
 fi
 ```
@@ -295,7 +295,7 @@ flatpak_ready() {
 
 ### [LIB-10] Système détecté
 
-Lit /etc/os-release et teste Debian 13.
+Lit /etc/os-release et reconnaît les systèmes pris en charge : Debian 13 et Kubuntu 26.04.
 
 `lib/common.sh` ligne 144
 
@@ -309,7 +309,7 @@ os_field() {
 
 Écrit et lit les clés de /etc/labnoir/labnoir.conf (version, compte, thème, Orbit Pixel…).
 
-`lib/common.sh` ligne 153
+`lib/common.sh` ligne 161
 
 ```bash
 conf_set() {
@@ -447,20 +447,25 @@ Vérifie que popularity-contest n'est pas installé.
 
 ```bash
 check_telemetry() {
+    local unit
+    for unit in apport whoopsie; do
+        if systemctl is-enabled "$unit.service" >/dev/null 2>&1; then
+            say "!" "$unit actif (rapports envoyés à Canonical)"
+            status=1
+        fi
+    done
     if dpkg -s popularity-contest >/dev/null 2>&1; then
         say "!" "popularity-contest installé (statistiques d'usage envoyées à Debian)"
         status=1
     else
-        say "✓" "popularity-contest absent"
-    fi
-}
+…
 ```
 
 ### [PRV-06] Effacement des dates de naissance
 
 Retire le champ birthDate des fiches /etc/userdb (sudo, avec jq).
 
-`bin/labnoir-privacy` ligne 58
+`bin/labnoir-privacy` ligne 65
 
 ```bash
 clear_birthdates() {
@@ -475,6 +480,28 @@ clear_birthdates() {
             n=$((n + 1))
         fi
     done
+…
+```
+
+### [PRV-07] Télémétrie d'Ubuntu
+
+Sur Kubuntu : coupe apport, whoopsie, ubuntu-report et les actualités publicitaires du MOTD.
+
+`modules/20-confidentialite.sh` ligne 27
+
+```bash
+prv_ubuntu() {
+    local unit
+    for unit in apport.service whoopsie.service; do
+        if systemctl list-unit-files "$unit" >/dev/null 2>&1; then
+            run systemctl disable --now "$unit" || true
+        fi
+    done
+    if [[ -f /etc/default/apport ]]; then
+        run sed -i 's/^enabled=.*/enabled=0/' /etc/default/apport
+    fi
+    if [[ -f /etc/default/motd-news ]]; then
+        run sed -i 's/^ENABLED=.*/ENABLED=0/' /etc/default/motd-news
 …
 ```
 

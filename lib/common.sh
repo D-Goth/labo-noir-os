@@ -150,6 +150,14 @@ is_debian13() {
     [[ "$(os_field ID)" == debian && "$(os_field VERSION_ID)" == 13 ]]
 }
 
+is_ubuntu() {
+    [[ "$(os_field ID)" == ubuntu ]]
+}
+
+is_supported() {
+    is_debian13 || { is_ubuntu && [[ "$(os_field VERSION_ID)" == 26.04 ]]; }
+}
+
 # [LIB-11]
 conf_set() {
     local key="$1" value="$2" file="$LABNOIR_ETC/labnoir.conf"

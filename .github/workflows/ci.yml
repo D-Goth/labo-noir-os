@@ -26,9 +26,13 @@ jobs:
             python3 bin/labnoir-theme render colors "$(basename "$t" .toml)" "/tmp/$(basename "$t").colors"
           done
 
-  debian:
+  paquets:
     runs-on: ubuntu-latest
-    container: debian:trixie
+    strategy:
+      fail-fast: false
+      matrix:
+        image: ["debian:trixie", "ubuntu:26.04"]
+    container: ${{ matrix.image }}
     steps:
       - uses: actions/checkout@v4
       - name: Paquets des listes

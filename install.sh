@@ -17,7 +17,7 @@ usage() {
     cat <<EOF
 Lab'O Noir OS : installateur
 
-Transforme une Debian 13 avec KDE Plasma 6 en poste Lab'O Noir.
+Transforme une Debian 13 ou une Kubuntu 26.04 (KDE Plasma 6) en poste Lab'O Noir.
 
 Usage : sudo ./install.sh [options]
 
@@ -110,13 +110,13 @@ done
 # [INS-04]
 [[ $EUID -eq 0 || "$LABNOIR_DRY_RUN" == 1 ]] || die "lance l'installateur avec sudo : sudo ./install.sh"
 
-if ! is_debian13; then
+if ! is_supported; then
     if ((FORCE)); then
-        warn "système détecté : $(os_field PRETTY_NAME). Lab'O Noir vise Debian 13 : on continue (--force)."
+        warn "système détecté : $(os_field PRETTY_NAME). Lab'O Noir vise Debian 13 et Kubuntu 26.04 : on continue (--force)."
     elif [[ "$LABNOIR_DRY_RUN" == 1 ]]; then
-        warn "système détecté : $(os_field PRETTY_NAME), pas Debian 13 (simulation seulement)"
+        warn "système détecté : $(os_field PRETTY_NAME), ni Debian 13 ni Kubuntu 26.04 (simulation seulement)"
     else
-        die "Lab'O Noir vise Debian 13 (système détecté : $(os_field PRETTY_NAME)). Relance avec --force pour essayer quand même."
+        die "Lab'O Noir vise Debian 13 et Kubuntu 26.04 (système détecté : $(os_field PRETTY_NAME)). Relance avec --force pour essayer quand même."
     fi
 fi
 

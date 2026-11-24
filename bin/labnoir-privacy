@@ -47,6 +47,13 @@ check_age_service() {
 
 # [PRV-05]
 check_telemetry() {
+    local unit
+    for unit in apport whoopsie; do
+        if systemctl is-enabled "$unit.service" >/dev/null 2>&1; then
+            say "!" "$unit actif (rapports envoyés à Canonical)"
+            status=1
+        fi
+    done
     if dpkg -s popularity-contest >/dev/null 2>&1; then
         say "!" "popularity-contest installé (statistiques d'usage envoyées à Debian)"
         status=1

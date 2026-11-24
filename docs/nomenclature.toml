@@ -78,7 +78,7 @@ definition = "Ajoute Flathub si besoin et installe des applications pour tout le
 
 [codes.LIB-10]
 titre = "Système détecté"
-definition = "Lit /etc/os-release et teste Debian 13."
+definition = "Lit /etc/os-release et reconnaît les systèmes pris en charge : Debian 13 et Kubuntu 26.04."
 
 [codes.LIB-11]
 titre = "Réglages Lab'O Noir"
@@ -299,3 +299,7 @@ definition = "Si un serveur SSH est présent : root interdit, tentatives limité
 [codes.OUT-01]
 titre = "Vérification des paquets"
 definition = "Vérifie que chaque paquet des listes existe dans les dépôts du système ; utilisée par la CI sur Debian 13."
+
+[codes.PRV-07]
+titre = "Télémétrie d'Ubuntu"
+definition = "Sur Kubuntu : coupe apport, whoopsie, ubuntu-report et les actualités publicitaires du MOTD."

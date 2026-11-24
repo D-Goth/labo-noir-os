@@ -15,11 +15,16 @@ jobs:
           shellcheck -x install.sh lib/common.sh modules/*.sh tools/*.sh \
             bin/labnoir-privacy bin/labnoir-redteam bin/labnoir-first-login
       - name: Python
-        run: python3 -m py_compile bin/labnoir-theme arsenal/arsenal.py scripts/nomenclature.py
+        run: python3 -m py_compile bin/labnoir-theme arsenal/arsenal.py arsenal/vues.py scripts/nomenclature.py
       - name: Nomenclature
         run: python3 scripts/nomenclature.py --check
       - name: Catalogue Arsenal
         run: python3 -c "import json; json.load(open('arsenal/tools.json'))"
+      - name: Vues d'Arsenal
+        run: |
+          pip install --quiet PyQt6
+          sudo apt-get install -y -qq libegl1 libxkbcommon0 libfontconfig1 >/dev/null
+          QT_QPA_PLATFORM=offscreen python3 tests/test_vues.py
       - name: Thèmes
         run: |
           for t in themes/*.toml; do

@@ -22,7 +22,7 @@ if command -v plasma-apply-lookandfeel >/dev/null 2>&1; then
 fi
 
 theme="$(conf THEME)"
-"$PREFIX/bin/labnoir-theme" apply "${theme:-labonoir}" || echo "thème non appliqué"
+"$PREFIX/bin/labnoir-theme" apply --fond "${theme:-labonoir}" || echo "thème non appliqué"
 
 if [[ "$(conf ORBIT_LAYOUT)" == 1 && -x "$PREFIX/widgets/orbitpixel/place-layout.sh" ]]; then
     sleep 2

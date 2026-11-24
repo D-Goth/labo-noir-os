@@ -267,7 +267,7 @@ def report(ok, label, detail=""):
 
 
 # [THM-09]
-def apply(t):
+def apply(t, with_wallpaper=False):
     print(f"Thème « {t.name} »")
     current = kread("kdeglobals", "General", "ColorScheme")
     scheme = "LabONoirB" if current == "LabONoir" else "LabONoir"
@@ -301,7 +301,7 @@ def apply(t):
                         "/KWin", "org.kde.KWin.reconfigure"], capture_output=True)
     report(ok, "verre dépoli et fenêtres", f"flou {t.blur}, boutons {t.buttons}")
 
-    if t.wallpaper and tool("plasma-apply-wallpaperimage"):
+    if with_wallpaper and t.wallpaper and tool("plasma-apply-wallpaperimage"):
         r = subprocess.run(["plasma-apply-wallpaperimage", str(t.wallpaper)], capture_output=True, text=True)
         report(r.returncode == 0, "fond d'écran", t.wallpaper.name)
 
@@ -328,6 +328,7 @@ def main(argv=None):
     sub.add_parser("current", help="affiche le thème actif")
     a = sub.add_parser("apply", help="applique un thème à la session")
     a.add_argument("theme")
+    a.add_argument("--fond", action="store_true", help="remplace aussi le fond d'écran par celui du thème")
     r = sub.add_parser("render", help="écrit un fichier de couleurs (installation)")
     r.add_argument("kind", choices=["colors", "konsole"])
     r.add_argument("theme")
@@ -347,7 +348,7 @@ def main(argv=None):
     if args.cmd == "apply":
         if os.geteuid() == 0:
             raise SystemExit("à lancer depuis ta session, sans sudo")
-        return apply(load(args.theme))
+        return apply(load(args.theme), args.fond)
     t = load(args.theme)
     text = render_colors(t) if args.kind == "colors" else render_konsole(t)
     write(args.output, text)

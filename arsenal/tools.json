@@ -62,7 +62,10 @@
               "label": "Fichier ou dossier analysé",
               "required": true
             }
-          ]
+          ],
+          "vue": {
+            "type": "yara"
+          }
         },
         {
           "id": "clamscan",
@@ -94,15 +97,17 @@
               "required": true,
               "default": "~"
             }
-          ]
+          ],
+          "vue": {
+            "type": "clamav"
+          }
         },
         {
           "id": "lynis",
           "name": "Lynis",
-          "description": "Audit de sécurité du système (lecture seule).",
+          "description": "Audit de sécurité du système, avec l'indice de durcissement (lancé sans sudo : tests limités).",
           "program": "lynis",
           "runner": "host",
-          "terminal": true,
           "params": [
             {
               "type": "choice",
@@ -125,9 +130,29 @@
               "label": "Sans pause",
               "args": [
                 "--quick"
-              ]
+              ],
+              "defaut_coche": true
+            },
+            {
+              "type": "flag",
+              "id": "nocolor",
+              "label": "Sans couleurs",
+              "args": [
+                "--no-colors"
+              ],
+              "defaut_coche": true
             }
-          ]
+          ],
+          "vue": {
+            "type": "lynis",
+            "fichier": "lynis-report.dat",
+            "args": [
+              "--report-file",
+              "{fichier}",
+              "--logfile",
+              "{dossier}/lynis.log"
+            ]
+          }
         },
         {
           "id": "rkhunter",
@@ -230,7 +255,15 @@
               "required": true,
               "placeholder": "192.168.1.1 ou 192.168.1.0/24"
             }
-          ]
+          ],
+          "vue": {
+            "type": "nmap",
+            "fichier": "nmap.xml",
+            "args": [
+              "-oX",
+              "{fichier}"
+            ]
+          }
         },
         {
           "id": "masscan",

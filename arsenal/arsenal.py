@@ -12,9 +12,12 @@ from PyQt6.QtCore import QProcess, Qt, QTimer
 from PyQt6.QtGui import QBrush, QColor, QFont, QFontDatabase, QIcon, QTextCursor
 from PyQt6.QtWidgets import (
     QApplication, QCheckBox, QComboBox, QFormLayout, QFrame, QHBoxLayout, QLabel, QLineEdit,
-    QMainWindow, QPlainTextEdit, QPushButton, QSplitter, QTreeWidget, QTreeWidgetItem, QVBoxLayout,
-    QWidget,
+    QMainWindow, QPlainTextEdit, QPushButton, QSplitter, QTabWidget, QTreeWidget, QTreeWidgetItem,
+    QVBoxLayout, QWidget,
 )
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import vues
 
 # [ARS-02]
 HERE = Path(__file__).resolve().parent
@@ -113,8 +116,17 @@ def build_args(tool, values):
     return args
 
 
-def full_command(tool, runner, args):
-    cmd = [tool["program"], *args]
+def view_args(tool, report):
+    vue = tool.get("vue") or {}
+    if not vue.get("args"):
+        return []
+    folder = str(Path(report).parent) if report else str(vues.CACHE)
+    path = str(report) if report else str(vues.CACHE / vue.get("fichier", "rapport"))
+    return [a.replace("{fichier}", path).replace("{dossier}", folder) for a in vue["args"]]
+
+
+def full_command(tool, runner, args, report=None):
+    cmd = [tool["program"], *view_args(tool, report), *args]
     if tool.get("sudo"):
         cmd = ["sudo", *cmd]
     if runner == "kali":
@@ -149,6 +161,7 @@ class ParamForm(QWidget):
         for p in tool.get("params", []):
             if p["type"] == "flag":
                 w = QCheckBox(p["label"])
+                w.setChecked(bool(p.get("defaut_coche")))
                 w.toggled.connect(self.on_change)
                 self.layout_.addRow("", w)
             elif p["type"] == "choice":
@@ -189,6 +202,7 @@ class Arsenal(QMainWindow):
         self.categories = load_tools()
         self.runners = Runners()
         self.tool = None
+        self.running_tool = None
         self.proc = None
         self.build_ui()
         self.populate()
@@ -272,7 +286,12 @@ class Arsenal(QMainWindow):
         self.output.setReadOnly(True)
         self.output.setFont(mono)
         self.output.setMaximumBlockCount(20000)
-        ml.addWidget(self.output, 1)
+        self.tabs = QTabWidget()
+        self.tabs.addTab(self.output, "Sortie")
+        self.view = None
+        self.buffer = []
+        self.report = None
+        ml.addWidget(self.tabs, 1)
         self.status = QLabel(objectName="muted")
         ml.addWidget(self.status)
         split.addWidget(main)
@@ -343,8 +362,21 @@ class Arsenal(QMainWindow):
         self.warning.setText(why)
         self.warning.setVisible(bool(why))
         self.form.build(tool)
+        self.set_view(tool)
         self.set_enabled(ok)
         self.update_preview()
+
+    # [ARS-13]
+    def set_view(self, tool):
+        if self.view is not None:
+            self.tabs.removeTab(1)
+            self.view.deleteLater()
+            self.view = None
+        vue = tool.get("vue")
+        if vue:
+            self.view = vues.make_view(vue["type"])
+            self.tabs.addTab(self.view, "Vue")
+        self.tabs.setCurrentIndex(0)
 
     def update_preview(self, *_):
         if not self.tool:
@@ -368,11 +400,15 @@ class Arsenal(QMainWindow):
         if not ok:
             self.status.setText(why)
             return
+        vue = self.tool.get("vue") or {}
+        self.report = vues.scratch(vue["fichier"]) if vue.get("fichier") else None
         try:
-            cmd = full_command(self.tool, runner, build_args(self.tool, self.form.values()))
+            cmd = full_command(self.tool, runner, build_args(self.tool, self.form.values()), self.report)
         except ValueError as e:
             self.status.setText(str(e))
             return
+        self.buffer = []
+        self.running_tool = self.tool
         self.output.appendPlainText(f"$ {shlex.join(cmd)}")
         if self.tool.get("terminal") or self.tool.get("sudo"):
             term = terminal_command(cmd)
@@ -395,6 +431,7 @@ class Arsenal(QMainWindow):
 
     def read_output(self):
         data = bytes(self.proc.readAllStandardOutput()).decode("utf-8", "replace")
+        self.buffer.append(data)
         self.output.moveCursor(QTextCursor.MoveOperation.End)
         self.output.insertPlainText(data)
         self.output.moveCursor(QTextCursor.MoveOperation.End)
@@ -404,8 +441,23 @@ class Arsenal(QMainWindow):
         self.output.appendPlainText(f"[terminé : {'interrompu' if crashed else f'code {code}'}]\n")
         self.status.setText("Interrompu." if crashed else f"Terminé (code {code}).")
         self.proc = None
+        self.show_view()
         self.stop_btn.setEnabled(False)
         self.set_enabled(self.tool is not None and self.runners.resolve(self.tool)[1])
+
+    # [ARS-14]
+    def show_view(self):
+        vue = (self.running_tool or {}).get("vue")
+        if not vue or self.view is None or self.running_tool is not self.tool:
+            return
+        try:
+            err = vues.render(vue["type"], self.view, "".join(self.buffer), self.report)
+        except (OSError, ValueError, vues.ET.ParseError) as e:
+            err = f"rapport illisible : {e}"
+        if err:
+            self.status.setText(self.status.text() + " " + err)
+        else:
+            self.tabs.setCurrentIndex(1)
 
     def failed(self, err):
         if err == QProcess.ProcessError.FailedToStart:

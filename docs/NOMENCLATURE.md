@@ -32,9 +32,10 @@ ne pas le modifier à la main.
 | [`RED`](#red) | Red team : module et outil labnoir-redteam | 5 |
 | [`VIR`](#vir) | Module virtualisation | 1 |
 | [`MSG`](#msg) | Module messagerie | 1 |
-| [`ARS`](#ars) | Arsenal, lanceur graphique des outils | 12 |
+| [`ARS`](#ars) | Arsenal, lanceur graphique des outils | 14 |
 | [`ORB`](#orb) | Module Orbit Pixel | 1 |
 | [`HRD`](#hrd) | Module durcissement | 5 |
+| [`VUE`](#vue) | Vues graphiques d'Arsenal (arsenal/vues.py) | 9 |
 | [`OUT`](#out) | Outils du dépôt (vérifications, CI) | 1 |
 
 ## INS
@@ -817,12 +818,12 @@ def tool(*names):
 
 ### [THM-09] Application
 
-Couleurs (en alternant deux noms pour forcer Plasma à recharger), icônes, terminal, flou et boutons de KWin, fond d'écran, accent et transparence d'Orbit Pixel, mémorisation du thème.
+Couleurs (en alternant deux noms pour forcer Plasma à recharger), icônes, terminal, flou et boutons de KWin, accent et transparence d'Orbit Pixel, mémorisation du thème. Le fond d'écran n'est remplacé qu'avec --fond (première connexion), pour garder celui choisi par l'utilisateur.
 
 `bin/labnoir-theme` ligne 269
 
 ```python
-def apply(t):
+def apply(t, with_wallpaper=False):
     print(f"Thème « {t.name} »")
     current = kread("kdeglobals", "General", "ColorScheme")
     scheme = "LabONoirB" if current == "LabONoir" else "LabONoir"
@@ -851,11 +852,11 @@ def main(argv=None):
     sub.add_parser("current", help="affiche le thème actif")
     a = sub.add_parser("apply", help="applique un thème à la session")
     a.add_argument("theme")
+    a.add_argument("--fond", action="store_true", help="remplace aussi le fond d'écran par celui du thème")
     r = sub.add_parser("render", help="écrit un fichier de couleurs (installation)")
     r.add_argument("kind", choices=["colors", "konsole"])
     r.add_argument("theme")
     r.add_argument("output", type=Path)
-    args = ap.parse_args(argv)
 …
 ```
 
@@ -1083,7 +1084,7 @@ module_run() {
 
 Fichiers d'Arsenal, nom du conteneur Kali, emplacements des thèmes, libellés des environnements.
 
-`arsenal/arsenal.py` ligne 19
+`arsenal/arsenal.py` ligne 22
 
 ```python
 HERE = Path(__file__).resolve().parent
@@ -1093,7 +1094,7 @@ HERE = Path(__file__).resolve().parent
 
 Lit tools.json (catégories, outils, paramètres).
 
-`arsenal/arsenal.py` ligne 30
+`arsenal/arsenal.py` ligne 33
 
 ```python
 def load_tools():
@@ -1106,7 +1107,7 @@ def load_tools():
 
 Couleur d'accent du thème Lab'O Noir actif, appliquée à la feuille de style.
 
-`arsenal/arsenal.py` ligne 37
+`arsenal/arsenal.py` ligne 40
 
 ```python
 def theme_accent():
@@ -1128,7 +1129,7 @@ def theme_accent():
 
 Présence de Distrobox et de la Kali isolée ; pour chaque outil : système, Kali ou automatique (système si l'outil y est installé), disponibilité et raison.
 
-`arsenal/arsenal.py` ligne 54
+`arsenal/arsenal.py` ligne 57
 
 ```python
 class Runners:
@@ -1148,9 +1149,9 @@ class Runners:
 
 ### [ARS-06] Construction de la commande
 
-Arguments dans l'ordre des paramètres (case, choix, texte avec option, préfixe ou position), champs obligatoires, ~ développé ; sudo et passage par la Kali. Aucun shell : une saisie reste un seul argument.
+Arguments dans l'ordre des paramètres (case, choix, texte avec option, préfixe ou position), champs obligatoires, ~ développé ; options de rapport de la vue juste après le programme ; sudo et passage par la Kali. Aucun shell : une saisie reste un seul argument.
 
-`arsenal/arsenal.py` ligne 87
+`arsenal/arsenal.py` ligne 90
 
 ```python
 def build_args(tool, values):
@@ -1172,7 +1173,7 @@ def build_args(tool, values):
 
 Konsole (fenêtre gardée ouverte) ou terminal par défaut pour les outils interactifs ou qui demandent sudo.
 
-`arsenal/arsenal.py` ligne 125
+`arsenal/arsenal.py` ligne 137
 
 ```python
 def terminal_command(cmd):
@@ -1187,7 +1188,7 @@ def terminal_command(cmd):
 
 Champs générés depuis les paramètres de l'outil, valeurs par défaut, mise à jour de l'aperçu à chaque saisie.
 
-`arsenal/arsenal.py` ligne 134
+`arsenal/arsenal.py` ligne 146
 
 ```python
 class ParamForm(QWidget):
@@ -1209,7 +1210,7 @@ class ParamForm(QWidget):
 
 Recherche, liste des outils (grisés s'ils sont indisponibles), état de la Kali, fiche de l'outil, aperçu de la commande, boutons et sortie.
 
-`arsenal/arsenal.py` ligne 181
+`arsenal/arsenal.py` ligne 194
 
 ```python
 class Arsenal(QMainWindow):
@@ -1222,8 +1223,8 @@ class Arsenal(QMainWindow):
         self.categories = load_tools()
         self.runners = Runners()
         self.tool = None
+        self.running_tool = None
         self.proc = None
-        self.build_ui()
 …
 ```
 
@@ -1231,7 +1232,7 @@ class Arsenal(QMainWindow):
 
 Affiche la fiche, l'environnement, l'avertissement éventuel et le formulaire ; aperçu de la commande exacte.
 
-`arsenal/arsenal.py` ligne 332
+`arsenal/arsenal.py` ligne 351
 
 ```python
 def select(self, item, _prev=None):
@@ -1251,9 +1252,9 @@ def select(self, item, _prev=None):
 
 ### [ARS-11] Exécution
 
-Lance l'outil dans un terminal ou avec QProcess (sortie en direct, arrêt propre puis forcé après 3 s, code de retour).
+Prépare le rapport de la vue, lance l'outil dans un terminal ou avec QProcess (sortie en direct gardée pour la vue, arrêt propre puis forcé après 3 s, code de retour).
 
-`arsenal/arsenal.py` ligne 363
+`arsenal/arsenal.py` ligne 395
 
 ```python
 def run(self):
@@ -1263,11 +1264,11 @@ def run(self):
     if not ok:
         self.status.setText(why)
         return
+    vue = self.tool.get("vue") or {}
+    self.report = vues.scratch(vue["fichier"]) if vue.get("fichier") else None
     try:
-        cmd = full_command(self.tool, runner, build_args(self.tool, self.form.values()))
+        cmd = full_command(self.tool, runner, build_args(self.tool, self.form.values()), self.report)
     except ValueError as e:
-        self.status.setText(str(e))
-        return
 …
 ```
 
@@ -1275,7 +1276,7 @@ def run(self):
 
 Application Qt, style, police et feuille de style à l'accent du thème.
 
-`arsenal/arsenal.py` ligne 429
+`arsenal/arsenal.py` ligne 481
 
 ```python
 def main():
@@ -1289,6 +1290,47 @@ def main():
     w = Arsenal()
     w.show()
     return app.exec()
+```
+
+### [ARS-13] Onglet Vue
+
+Crée la vue graphique de l'outil choisi à côté de l'onglet Sortie, ou la retire s'il n'en a pas.
+
+`arsenal/arsenal.py` ligne 369
+
+```python
+def set_view(self, tool):
+    if self.view is not None:
+        self.tabs.removeTab(1)
+        self.view.deleteLater()
+        self.view = None
+    vue = tool.get("vue")
+    if vue:
+        self.view = vues.make_view(vue["type"])
+        self.tabs.addTab(self.view, "Vue")
+    self.tabs.setCurrentIndex(0)
+```
+
+### [ARS-14] Affichage de la vue
+
+À la fin de l'exécution, lit le rapport ou la sortie et affiche la vue ; signale un rapport absent ou illisible.
+
+`arsenal/arsenal.py` ligne 448
+
+```python
+def show_view(self):
+    vue = (self.running_tool or {}).get("vue")
+    if not vue or self.view is None or self.running_tool is not self.tool:
+        return
+    try:
+        err = vues.render(vue["type"], self.view, "".join(self.buffer), self.report)
+    except (OSError, ValueError, vues.ET.ParseError) as e:
+        err = f"rapport illisible : {e}"
+    if err:
+        self.status.setText(self.status.text() + " " + err)
+    else:
+        self.tabs.setCurrentIndex(1)
+…
 ```
 
 
@@ -1410,6 +1452,166 @@ hrd_ssh() {
         ok "SSH : connexion root interdite, fail2ban actif"
     fi
 }
+```
+
+
+## VUE
+
+Vues graphiques d'Arsenal (arsenal/vues.py)
+
+### [VUE-01] Niveaux de risque et cache
+
+Services sensibles s'ils sont exposés (Telnet, FTP, SMB, RDP, VNC, bases de données, Redis…), services attendus (SSH, HTTPS, DNS…), couleurs, dossier ~/.cache/labnoir/arsenal des rapports.
+
+`arsenal/vues.py` ligne 17
+
+```python
+RISKY = {
+    "telnet", "ftp", "tftp", "microsoft-ds", "netbios-ssn", "smb", "ms-wbt-server", "rdp", "vnc",
+    "mysql", "postgresql", "ms-sql-s", "redis", "mongodb", "memcached", "snmp", "rpcbind", "nfs",
+    "rlogin", "rsh", "rexec", "x11", "elasticsearch", "docker",
+}
+```
+
+### [VUE-02] Machines et ports
+
+Port (numéro, protocole, état, service, version) et machine (adresse, nom, système) avec leur niveau : sensible, à vérifier, attendu, fermé.
+
+`arsenal/vues.py` ligne 36
+
+```python
+@dataclass
+```
+
+### [VUE-03] Lecture du rapport Nmap
+
+Lit le XML de Nmap (-oX) : machines actives, noms, système détecté, ports et versions.
+
+`arsenal/vues.py` ligne 74
+
+```python
+def parse_nmap(path):
+    root = ET.parse(path).getroot()
+    hosts = []
+    for h in root.findall("host"):
+        status = h.find("status")
+        if status is not None and status.get("state") != "up":
+            continue
+        addr = next((a.get("addr") for a in h.findall("address") if a.get("addrtype") in ("ipv4", "ipv6")), "?")
+        name_el = h.find("hostnames/hostname")
+        os_el = h.find("os/osmatch")
+        host = Host(
+            address=addr,
+…
+```
+
+### [VUE-04] Lecture du rapport Lynis
+
+Lit le rapport de Lynis : indice de durcissement, avertissements et suggestions avec leur détail.
+
+`arsenal/vues.py` ligne 108
+
+```python
+def parse_lynis(path):
+    index, warnings, suggestions = None, [], []
+    for line in Path(path).read_text(encoding="utf-8", errors="replace").splitlines():
+        if line.startswith("hardening_index="):
+            try:
+                index = int(line.split("=", 1)[1])
+            except ValueError:
+                index = None
+        elif line.startswith("warning[]="):
+            parts = line.split("=", 1)[1].split("|")
+            warnings.append((parts[0], parts[1] if len(parts) > 1 else ""))
+        elif line.startswith("suggestion[]="):
+…
+```
+
+### [VUE-05] Lecture des détections
+
+Détections de ClamAV (« chemin: signature FOUND ») et de YARA (« règle chemin »).
+
+`arsenal/vues.py` ligne 128
+
+```python
+FOUND = re.compile(r"^(?P<path>.+): (?P<sig>.+) FOUND$")
+```
+
+### [VUE-06] Carte réseau Nmap
+
+Une bulle par machine colorée selon son port le plus sensible, ses ports ouverts autour d'elle, infobulles détaillées, carte ajustée à la fenêtre, et tableau de tous les ports.
+
+`arsenal/vues.py` ligne 145
+
+```python
+class NmapView(QWidget):
+    def __init__(self):
+        super().__init__()
+        lay = QVBoxLayout(self)
+        lay.setContentsMargins(0, 0, 0, 0)
+        self.summary = QLabel(objectName="muted")
+        lay.addWidget(self.summary)
+        split = QSplitter(Qt.Orientation.Vertical)
+        self.scene = QGraphicsScene()
+        self.view = QGraphicsView(self.scene)
+        self.view.setRenderHint(QPainter.RenderHint.Antialiasing)
+        self.view.setObjectName("map")
+…
+```
+
+### [VUE-07] Rapport Lynis
+
+Jauge de l'indice de durcissement (rouge sous 60, orange sous 80, vert au-delà), avertissements et suggestions.
+
+`arsenal/vues.py` ligne 256
+
+```python
+class Gauge(QWidget):
+    def __init__(self):
+        super().__init__()
+        self.value = None
+        self.setMinimumSize(200, 200)
+
+    def set_value(self, v):
+        self.value = v
+        self.update()
+
+    def paintEvent(self, _):
+        p = QPainter(self)
+…
+```
+
+### [VUE-08] Tableau des détections
+
+Fichiers détectés par ClamAV ou YARA avec la signature ou la règle, et ouverture du dossier du fichier.
+
+`arsenal/vues.py` ligne 322
+
+```python
+class FindingsView(QWidget):
+    def __init__(self):
+        super().__init__()
+        lay = QVBoxLayout(self)
+        lay.setContentsMargins(0, 0, 0, 0)
+        self.summary = QLabel(objectName="muted")
+        lay.addWidget(self.summary)
+        self.table = QTableWidget(0, 2)
+        self.table.setHorizontalHeaderLabels(["Fichier", "Détection"])
+        self.table.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeMode.Stretch)
+        self.table.verticalHeader().hide()
+        self.table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
+…
+```
+
+### [VUE-09] Choix et affichage d'une vue
+
+Crée la vue d'un type (nmap, lynis, clamav, yara) et lui passe le rapport ou la sortie de l'outil.
+
+`arsenal/vues.py` ligne 359
+
+```python
+def make_view(kind):
+    return {"nmap": NmapView, "lynis": LynisView, "clamav": FindingsView, "yara": FindingsView}[kind]()
 ```
 
 

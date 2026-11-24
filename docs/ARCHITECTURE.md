@@ -72,6 +72,12 @@ Arsenal choisit l'environnement de chaque outil : système, Kali, ou automatique
 est installé). La commande est construite argument par argument, sans shell : une saisie ne peut pas
 injecter de commande. Les outils interactifs ou qui demandent `sudo` s'ouvrent dans Konsole.
 
+Certains outils ont une **vue graphique** (`arsenal/vues.py`), déclarée dans `tools.json` par `"vue"` :
+Arsenal ajoute l'option de rapport machine (`-oX` pour Nmap, `--report-file` pour Lynis) vers
+`~/.cache/labnoir/arsenal`, partagé avec la Kali isolée, puis dessine le résultat dans l'onglet **Vue** :
+carte réseau Nmap (machines et ports colorés selon leur sensibilité), jauge et listes de Lynis,
+tableau des détections de ClamAV et YARA. L'onglet **Sortie** garde toujours le texte brut.
+
 ## Confidentialité
 
 - `config/dbus/labnoir-age.conf` interdit à `org.freedesktop.AgeVerification1` (nom proposé en 2026 pour

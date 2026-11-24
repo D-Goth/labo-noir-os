@@ -7,7 +7,7 @@ avec verre dépoli et thèmes à la carte, les outils de défense sur le systèm
 dans une Kali en conteneur ou en machine virtuelle, une messagerie sans inscription, et aucun recueil de
 date de naissance ni de télémétrie.
 
-![Arsenal](docs/img/arsenal.png)
+![Arsenal : carte réseau Nmap](docs/img/arsenal-nmap.png)
 
 ## Ce que contient Lab'O Noir
 
@@ -21,7 +21,7 @@ date de naissance ni de télémétrie.
 | `redteam` | Kali officielle isolée dans un conteneur Distrobox, `labnoir-redteam` |
 | `virtualisation` | QEMU/KVM et virt-manager pour les VM d'attaque et d'analyse de logiciels malveillants |
 | `messagerie` | SimpleX Chat (aucun identifiant) et Briar (Tor, Wi-Fi, Bluetooth) |
-| `arsenal` | Lanceur graphique des outils, sur le système ou dans la Kali |
+| `arsenal` | Lanceur graphique des outils, sur le système ou dans la Kali, avec des vues graphiques des résultats (carte réseau Nmap, rapport Lynis, détections ClamAV et YARA) |
 | `orbit` | Orbit Pixel : modules circulaires pour le bureau |
 | `durcissement` | Pare-feu, noyau durci, mises à jour de sécurité automatiques, SSH |
 
@@ -48,7 +48,7 @@ Le journal est dans `/var/log/labnoir-install.log`. Un paquet absent des dépôt
 | Commande | Rôle |
 |---|---|
 | `labnoir-theme list` | Thèmes disponibles (`labonoir`, `nuit-bleue`, `givre`) |
-| `labnoir-theme apply nuit-bleue` | Change d'accent, de flou, de boutons de fenêtres, de fond, et Orbit Pixel suit |
+| `labnoir-theme apply nuit-bleue` | Change d'accent, de flou, de boutons de fenêtres, et Orbit Pixel suit ; ton fond d'écran est gardé (`--fond` pour prendre celui du thème) |
 | `labnoir-redteam init` | Crée la Kali isolée (top 10 des outils ; `--full` ou `--large` pour plus) |
 | `labnoir-redteam enter` | Terminal dans la Kali |
 | `labnoir-redteam vm` | Vérifie la virtualisation et ouvre virt-manager |

@@ -13,6 +13,7 @@ MSG = "Module messagerie"
 ARS = "Arsenal, lanceur graphique des outils"
 ORB = "Module Orbit Pixel"
 HRD = "Module durcissement"
+VUE = "Vues graphiques d'Arsenal (arsenal/vues.py)"
 OUT = "Outils du dépôt (vérifications, CI)"
 
 
@@ -182,7 +183,7 @@ definition = "Recherche des outils KDE, lecture et écriture de réglages, écri
 
 [codes.THM-09]
 titre = "Application"
-definition = "Couleurs (en alternant deux noms pour forcer Plasma à recharger), icônes, terminal, flou et boutons de KWin, fond d'écran, accent et transparence d'Orbit Pixel, mémorisation du thème."
+definition = "Couleurs (en alternant deux noms pour forcer Plasma à recharger), icônes, terminal, flou et boutons de KWin, accent et transparence d'Orbit Pixel, mémorisation du thème. Le fond d'écran n'est remplacé qu'avec --fond (première connexion), pour garder celui choisi par l'utilisateur."
 
 [codes.THM-10]
 titre = "Commandes"
@@ -246,7 +247,7 @@ definition = "Présence de Distrobox et de la Kali isolée ; pour chaque outil :
 
 [codes.ARS-06]
 titre = "Construction de la commande"
-definition = "Arguments dans l'ordre des paramètres (case, choix, texte avec option, préfixe ou position), champs obligatoires, ~ développé ; sudo et passage par la Kali. Aucun shell : une saisie reste un seul argument."
+definition = "Arguments dans l'ordre des paramètres (case, choix, texte avec option, préfixe ou position), champs obligatoires, ~ développé ; options de rapport de la vue juste après le programme ; sudo et passage par la Kali. Aucun shell : une saisie reste un seul argument."
 
 [codes.ARS-07]
 titre = "Terminal"
@@ -266,7 +267,7 @@ definition = "Affiche la fiche, l'environnement, l'avertissement éventuel et le
 
 [codes.ARS-11]
 titre = "Exécution"
-definition = "Lance l'outil dans un terminal ou avec QProcess (sortie en direct, arrêt propre puis forcé après 3 s, code de retour)."
+definition = "Prépare le rapport de la vue, lance l'outil dans un terminal ou avec QProcess (sortie en direct gardée pour la vue, arrêt propre puis forcé après 3 s, code de retour)."
 
 [codes.ARS-12]
 titre = "Lancement"
@@ -303,3 +304,48 @@ definition = "Vérifie que chaque paquet des listes existe dans les dépôts du 
 [codes.PRV-07]
 titre = "Télémétrie d'Ubuntu"
 definition = "Sur Kubuntu : coupe apport, whoopsie, ubuntu-report et les actualités publicitaires du MOTD."
+
+[codes.ARS-13]
+titre = "Onglet Vue"
+definition = "Crée la vue graphique de l'outil choisi à côté de l'onglet Sortie, ou la retire s'il n'en a pas."
+
+[codes.ARS-14]
+titre = "Affichage de la vue"
+definition = "À la fin de l'exécution, lit le rapport ou la sortie et affiche la vue ; signale un rapport absent ou illisible."
+
+[codes.VUE-01]
+titre = "Niveaux de risque et cache"
+definition = "Services sensibles s'ils sont exposés (Telnet, FTP, SMB, RDP, VNC, bases de données, Redis…), services attendus (SSH, HTTPS, DNS…), couleurs, dossier ~/.cache/labnoir/arsenal des rapports."
+
+[codes.VUE-02]
+titre = "Machines et ports"
+definition = "Port (numéro, protocole, état, service, version) et machine (adresse, nom, système) avec leur niveau : sensible, à vérifier, attendu, fermé."
+
+[codes.VUE-03]
+titre = "Lecture du rapport Nmap"
+definition = "Lit le XML de Nmap (-oX) : machines actives, noms, système détecté, ports et versions."
+
+[codes.VUE-04]
+titre = "Lecture du rapport Lynis"
+definition = "Lit le rapport de Lynis : indice de durcissement, avertissements et suggestions avec leur détail."
+
+[codes.VUE-05]
+titre = "Lecture des détections"
+definition = "Détections de ClamAV (« chemin: signature FOUND ») et de YARA (« règle chemin »)."
+
+[codes.VUE-06]
+titre = "Carte réseau Nmap"
+definition = "Une bulle par machine colorée selon son port le plus sensible, ses ports ouverts autour d'elle, infobulles détaillées, carte ajustée à la fenêtre, et tableau de tous les ports."
+
+[codes.VUE-07]
+titre = "Rapport Lynis"
+definition = "Jauge de l'indice de durcissement (rouge sous 60, orange sous 80, vert au-delà), avertissements et suggestions."
+
+[codes.VUE-08]
+titre = "Tableau des détections"
+definition = "Fichiers détectés par ClamAV ou YARA avec la signature ou la règle, et ouverture du dossier du fichier."
+
+[codes.VUE-09]
+titre = "Choix et affichage d'une vue"
+definition = "Crée la vue d'un type (nmap, lynis, clamav, yara) et lui passe le rapport ou la sortie de l'outil."
+

@@ -8,4 +8,5 @@
 | **4** | Fenêtres en verre dépoli (thème Kvantum translucide assorti), écran de connexion SDDM propre | à faire |
 | **5** | Client bitchat graphique (réseau maillé Bluetooth, protocole Noise) écrit en Rust/Tauri, relu avant d'être présenté comme sûr | à faire |
 | **6** | VM prêtes à l'emploi (Kali, REMnux, Windows d'analyse) téléchargées et vérifiées par `labnoir-redteam vm` | à faire |
+| **8** | Vues Arsenal suivantes : TShark en direct (débit, protocoles, qui parle à qui), export des cartes Nmap en image | à faire |
 | **7** | Bouton « Soutenir » (pourboires) dans Arsenal, le studio et sur black-lab.fr | à faire |

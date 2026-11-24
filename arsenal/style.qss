@@ -172,3 +172,49 @@ QScrollBar::handle:vertical:hover {
 QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
     height: 0;
 }
+
+QTabWidget::pane {
+    border: 1px solid #26262C;
+    border-radius: 10px;
+    top: -1px;
+}
+
+QTabBar::tab {
+    background: transparent;
+    color: #8C8C95;
+    padding: 6px 16px;
+    border-bottom: 2px solid transparent;
+}
+
+QTabBar::tab:selected {
+    color: #E8E8EC;
+    border-bottom: 2px solid #FF1654;
+}
+
+QTableWidget, QListWidget, QGraphicsView#map {
+    background: #0B0B0D;
+    border: none;
+    border-radius: 10px;
+    gridline-color: #1C1C20;
+}
+
+QHeaderView::section {
+    background: #141417;
+    color: #8C8C95;
+    border: none;
+    padding: 6px 8px;
+}
+
+QTableWidget::item:selected, QListWidget::item:selected {
+    background: rgba(255, 22, 84, 0.16);
+    color: #FFFFFF;
+}
+
+QListWidget::item {
+    padding: 4px 6px;
+}
+
+QLabel#section {
+    font-weight: 600;
+    padding-top: 4px;
+}

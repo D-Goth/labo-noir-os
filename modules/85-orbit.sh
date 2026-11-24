@@ -14,6 +14,10 @@ module_run() {
         put_dir "$src/$ORBIT_ID" "/usr/share/plasma/plasmoids/$ORBIT_ID"
     fi
     put "$src/place-layout.sh" "$LABNOIR_PREFIX/widgets/orbitpixel/place-layout.sh" 0755
-    conf_set ORBIT_LAYOUT "${LABNOIR_ORBIT_LAYOUT:-1}"
+    if [[ -n "${LABNOIR_ORBIT_LAYOUT:-}" ]]; then
+        conf_set ORBIT_LAYOUT "$LABNOIR_ORBIT_LAYOUT"
+    elif [[ -z "$(conf_get ORBIT_LAYOUT || true)" ]]; then
+        conf_set ORBIT_LAYOUT 1
+    fi
     ok "Orbit Pixel installé ; disposition posée à la première connexion (ORBIT_LAYOUT=0 dans $LABNOIR_ETC/labnoir.conf pour l'éviter)"
 }

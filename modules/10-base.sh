@@ -42,9 +42,18 @@ bas_guest_tools() {
 # [BAS-03]
 bas_browser() {
     flatpak_install app.zen_browser.zen
-    if [[ -n "$(target_user)" ]]; then
-        as_user xdg-settings set default-web-browser app.zen_browser.zen.desktop \
-            || warn "Zen non défini comme navigateur par défaut : Configuration du système > Applications par défaut"
+    local user current=""
+    user="$(target_user)"
+    [[ -n "$user" ]] || return 0
+    if [[ "$LABNOIR_DRY_RUN" != 1 ]]; then
+        current="$(sudo -u "$user" -H xdg-settings get default-web-browser 2>/dev/null || true)"
     fi
-    ok "Zen Browser installé et choisi comme navigateur par défaut"
+    case "$current" in
+        "" | firefox*.desktop | org.mozilla.firefox.desktop | app.zen_browser.zen.desktop)
+            as_user xdg-settings set default-web-browser app.zen_browser.zen.desktop \
+                || warn "Zen non défini comme navigateur par défaut : Configuration du système > Applications par défaut"
+            ok "Zen Browser installé et choisi comme navigateur par défaut"
+            ;;
+        *) ok "Zen Browser installé ; navigateur par défaut conservé : $current" ;;
+    esac
 }

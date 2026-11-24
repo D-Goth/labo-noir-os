@@ -25,7 +25,7 @@ ne pas le modifier à la main.
 | [`LIB`](#lib) | Bibliothèque commune des modules (lib/common.sh) | 11 |
 | [`BAS`](#bas) | Module base | 3 |
 | [`PRV`](#prv) | Confidentialité : module et outil labnoir-privacy | 7 |
-| [`DSK`](#dsk) | Bureau : module, look-and-feel Plasma, première connexion | 11 |
+| [`DSK`](#dsk) | Bureau : module, look-and-feel Plasma, première connexion | 13 |
 | [`THM`](#thm) | Gestionnaire de thèmes labnoir-theme | 14 |
 | [`STU`](#stu) | Studio Lab'O Noir, éditeur graphique de thèmes (studio/studio.py) | 7 |
 | [`DEV`](#dev) | Module développement | 1 |
@@ -64,7 +64,7 @@ FORCE=0
 
 ### [INS-02] Options
 
-Aide et lecture des options : --list, --only, --skip, --user, --dry-run, --yes, --force.
+Aide et lecture des options : --list, --only, --skip, --user, --dry-run, --yes, --force, --reset-bureau.
 
 `install.sh` ligne 15
 
@@ -88,7 +88,7 @@ Usage : sudo ./install.sh [options]
 
 Découverte des modules (modules/NN-nom.sh), identifiant, description, modules facultatifs, sélection et vérification des noms demandés.
 
-`install.sh` ligne 56
+`install.sh` ligne 59
 
 ```bash
 module_id() {
@@ -100,7 +100,7 @@ module_id() {
 
 Droits root (sauf simulation), système Debian 13 (ou --force), compte à personnaliser, résumé et confirmation.
 
-`install.sh` ligne 110
+`install.sh` ligne 113
 
 ```bash
 [[ $EUID -eq 0 || "$LABNOIR_DRY_RUN" == 1 ]] || die "lance l'installateur avec sudo : sudo ./install.sh"
@@ -120,7 +120,7 @@ fi
 
 Journal en 600, mise à jour unique de l'index apt, puis chaque module dans un sous-shell avec set -e : l'échec d'un module n'arrête pas les autres.
 
-`install.sh` ligne 141
+`install.sh` ligne 144
 
 ```bash
 if [[ "$LABNOIR_DRY_RUN" != 1 ]]; then
@@ -142,7 +142,7 @@ for f in "${TODO[@]}"; do
 
 Modules terminés, en échec, paquets introuvables, emplacement du journal ; code de sortie non nul si un module a échoué.
 
-`install.sh` ligne 169
+`install.sh` ligne 172
 
 ```bash
 printf '\n%s●%s Bilan\n' "$C_ACC" "$C_OFF"
@@ -379,19 +379,24 @@ bas_guest_tools() {
 
 ### [BAS-03] Navigateur
 
-Installe Zen Browser depuis Flathub et le choisit comme navigateur par défaut du compte cible.
+Installe Zen Browser depuis Flathub et le choisit comme navigateur par défaut du compte cible, sauf si celui-ci en a déjà choisi un autre que Firefox.
 
 `modules/10-base.sh` ligne 42
 
 ```bash
 bas_browser() {
     flatpak_install app.zen_browser.zen
-    if [[ -n "$(target_user)" ]]; then
-        as_user xdg-settings set default-web-browser app.zen_browser.zen.desktop \
-            || warn "Zen non défini comme navigateur par défaut : Configuration du système > Applications par défaut"
+    local user current=""
+    user="$(target_user)"
+    [[ -n "$user" ]] || return 0
+    if [[ "$LABNOIR_DRY_RUN" != 1 ]]; then
+        current="$(sudo -u "$user" -H xdg-settings get default-web-browser 2>/dev/null || true)"
     fi
-    ok "Zen Browser installé et choisi comme navigateur par défaut"
-}
+    case "$current" in
+        "" | firefox*.desktop | org.mozilla.firefox.desktop | app.zen_browser.zen.desktop)
+            as_user xdg-settings set default-web-browser app.zen_browser.zen.desktop \
+                || warn "Zen non défini comme navigateur par défaut : Configuration du système > Applications par défaut"
+…
 ```
 
 
@@ -607,41 +612,46 @@ dsk_system_defaults() {
 
 ### [DSK-04] Écran de connexion
 
-SDDM avec le thème Breeze et le fond Lab'O Noir.
+SDDM avec le thème Breeze et le fond Lab'O Noir ; un fond d'écran de connexion choisi par l'utilisateur est conservé.
 
 `modules/30-bureau.sh` ligne 55
 
 ```bash
 dsk_sddm() {
     put "$LABNOIR_ROOT/config/sddm/10-labonoir.conf" /etc/sddm.conf.d/10-labonoir.conf
-    if [[ -d /usr/share/sddm/themes/breeze ]]; then
+    local user_conf=/usr/share/sddm/themes/breeze/theme.conf.user
+    if [[ -f "$user_conf" ]] && ! grep -qF "$WALL_DIR" "$user_conf"; then
+        info "écran de connexion : fond personnalisé conservé ($user_conf)"
+    elif [[ -d /usr/share/sddm/themes/breeze ]]; then
         if [[ "$LABNOIR_DRY_RUN" == 1 ]]; then
             info "/usr/share/sddm/themes/breeze/theme.conf.user : fond Lab'O Noir"
         else
             printf '[General]\nbackground=%s\ntype=image\n' "$WALL_DIR/contents/images/1440x900.jpg" \
                 >/usr/share/sddm/themes/breeze/theme.conf.user
         fi
-    fi
-}
+…
 ```
 
 ### [DSK-05] Première connexion
 
-Installe le lanceur automatique et remet à zéro le marqueur du compte cible pour réappliquer le bureau.
+Installe le lanceur automatique. Un bureau déjà configuré est conservé ; avec --reset-bureau, demande sa réapplication à la prochaine connexion.
 
-`modules/30-bureau.sh` ligne 88
+`modules/30-bureau.sh` ligne 91
 
 ```bash
 dsk_first_login() {
     put "$LABNOIR_ROOT/config/autostart/labnoir-first-login.desktop" /etc/xdg/autostart/labnoir-first-login.desktop
     link_bin labnoir-first-login
-    local home
+    local home user
+    user="$(target_user)"
     home="$(target_home)"
-    if [[ -n "$home" && -f "$home/.config/labnoir/first-login.done" ]]; then
+    [[ -n "$home" && -d "$home/.config/labnoir" ]] || return 0
+    if [[ "${LABNOIR_RESET_DESKTOP:-0}" == 1 ]]; then
+        run install -D -o "$user" -m 0644 /dev/null "$home/.config/labnoir/first-login.reset"
         run rm -f "$home/.config/labnoir/first-login.done"
-        info "le bureau de $(target_user) sera réappliqué à sa prochaine connexion"
-    fi
-}
+        info "le bureau de $user sera réappliqué à sa prochaine connexion (config actuelle sauvegardée)"
+    else
+…
 ```
 
 ### [DSK-06] Fond d'écran
@@ -705,7 +715,7 @@ tasks.writeConfig("launchers", [
 
 ### [DSK-09] labnoir-first-login
 
-Une seule fois par compte : applique le look-and-feel avec sa disposition, le thème choisi, puis la disposition Orbit Pixel si elle est activée ; journal dans ~/.config/labnoir.
+Une seule fois par compte : applique le look-and-feel avec sa disposition, le thème choisi, puis la disposition Orbit Pixel si elle est activée ; journal dans ~/.config/labnoir. Le marqueur de réapplication est retiré à la fin.
 
 `bin/labnoir-first-login` ligne 4
 
@@ -716,12 +726,12 @@ CONF="/etc/labnoir/labnoir.conf"
 PREFIX="${LABNOIR_PREFIX:-/opt/labnoir}"
 LOG="$STATE_DIR/first-login.log"
 
+RESET="$STATE_DIR/first-login.reset"
+CFG="${XDG_CONFIG_HOME:-$HOME/.config}"
+
 [[ -f "$DONE" ]] && exit 0
 mkdir -p "$STATE_DIR"
 exec >>"$LOG" 2>&1
-echo "== $(date '+%F %T')"
-
-conf() { [[ -f "$CONF" ]] && sed -n "s|^$1=||p" "$CONF" | tail -n1; }
 …
 ```
 
@@ -746,7 +756,7 @@ dsk_studio() {
 
 Ajoute une seule fois le chargement de l'invite Lab'O Noir au .bashrc du compte cible et à celui des futurs comptes (/etc/skel).
 
-`modules/30-bureau.sh` ligne 68
+`modules/30-bureau.sh` ligne 71
 
 ```bash
 dsk_prompt() {
@@ -762,6 +772,37 @@ dsk_prompt() {
         if [[ "$LABNOIR_DRY_RUN" == 1 ]]; then
             info "$f : invite Lab'O Noir"
 …
+```
+
+### [DSK-12] Bureau déjà personnalisé
+
+Si le compte a déjà un thème Lab'O Noir et qu'aucune réapplication n'est demandée, la première connexion ne modifie rien.
+
+`bin/labnoir-first-login` ligne 19
+
+```bash
+if [[ -f "$STATE_DIR/theme" && ! -f "$RESET" ]]; then
+    echo "bureau déjà personnalisé : rien n'est modifié"
+    touch "$DONE"
+    exit 0
+fi
+```
+
+### [DSK-13] Sauvegarde avant application
+
+Copie la configuration en place (panneaux, couleurs, KWin, Konsole, Orbit Pixel) dans ~/.config/labnoir/sauvegardes/<date> avant d'appliquer le bureau.
+
+`bin/labnoir-first-login` ligne 26
+
+```bash
+SAVE="$STATE_DIR/sauvegardes/$(date '+%F_%H%M%S')"
+mkdir -p "$SAVE"
+for f in plasma-org.kde.plasma.desktop-appletsrc plasmashellrc kdeglobals kwinrc konsolerc orbitpixelrc; do
+    [[ -f "$CFG/$f" ]] && cp -a "$CFG/$f" "$SAVE/"
+done
+echo "configuration précédente sauvegardée dans $SAVE"
+
+conf() { [[ -f "$CONF" ]] && sed -n "s|^$1=||p" "$CONF" | tail -n1; }
 ```
 
 
@@ -1624,7 +1665,7 @@ Module Orbit Pixel
 
 ### [ORB-01] Module Orbit Pixel
 
-Dépendances, installation du widget pour tout le système, script de disposition et réglage ORBIT_LAYOUT.
+Dépendances, installation du widget pour tout le système, script de disposition et réglage ORBIT_LAYOUT (un choix déjà fait est conservé, sauf si LABNOIR_ORBIT_LAYOUT est fourni).
 
 `modules/85-orbit.sh` ligne 6
 
@@ -1639,8 +1680,8 @@ module_run() {
         put_dir "$src/$ORBIT_ID" "/usr/share/plasma/plasmoids/$ORBIT_ID"
     fi
     put "$src/place-layout.sh" "$LABNOIR_PREFIX/widgets/orbitpixel/place-layout.sh" 0755
-    conf_set ORBIT_LAYOUT "${LABNOIR_ORBIT_LAYOUT:-1}"
-    ok "Orbit Pixel installé ; disposition posée à la première connexion (ORBIT_LAYOUT=0 dans $LABNOIR_ETC/labnoir.conf pour l'éviter)"
+    if [[ -n "${LABNOIR_ORBIT_LAYOUT:-}" ]]; then
+        conf_set ORBIT_LAYOUT "$LABNOIR_ORBIT_LAYOUT"
 …
 ```
 

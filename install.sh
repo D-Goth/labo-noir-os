@@ -28,6 +28,8 @@ Usage : sudo ./install.sh [options]
   --dry-run           affiche ce qui serait fait, sans rien modifier
   --yes               ne demande pas de confirmation
   --force             continue même hors de Debian 13
+  --reset-bureau      réapplique le bureau Lab'O Noir à la prochaine connexion
+                      (dock, thème, fond, Orbit Pixel ; l'ancienne config est sauvegardée)
   -h, --help          cette aide
 EOF
 }
@@ -47,6 +49,7 @@ while (($#)); do
         --dry-run) LABNOIR_DRY_RUN=1; export LABNOIR_DRY_RUN ;;
         --yes) ASSUME_YES=1 ;;
         --force) FORCE=1 ;;
+        --reset-bureau) LABNOIR_RESET_DESKTOP=1; export LABNOIR_RESET_DESKTOP ;;
         -h | --help) usage; exit 0 ;;
         *) usage; die "option inconnue : $1" ;;
     esac

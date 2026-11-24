@@ -55,7 +55,10 @@ dsk_system_defaults() {
 # [DSK-04]
 dsk_sddm() {
     put "$LABNOIR_ROOT/config/sddm/10-labonoir.conf" /etc/sddm.conf.d/10-labonoir.conf
-    if [[ -d /usr/share/sddm/themes/breeze ]]; then
+    local user_conf=/usr/share/sddm/themes/breeze/theme.conf.user
+    if [[ -f "$user_conf" ]] && ! grep -qF "$WALL_DIR" "$user_conf"; then
+        info "écran de connexion : fond personnalisé conservé ($user_conf)"
+    elif [[ -d /usr/share/sddm/themes/breeze ]]; then
         if [[ "$LABNOIR_DRY_RUN" == 1 ]]; then
             info "/usr/share/sddm/themes/breeze/theme.conf.user : fond Lab'O Noir"
         else
@@ -89,10 +92,15 @@ dsk_prompt() {
 dsk_first_login() {
     put "$LABNOIR_ROOT/config/autostart/labnoir-first-login.desktop" /etc/xdg/autostart/labnoir-first-login.desktop
     link_bin labnoir-first-login
-    local home
+    local home user
+    user="$(target_user)"
     home="$(target_home)"
-    if [[ -n "$home" && -f "$home/.config/labnoir/first-login.done" ]]; then
+    [[ -n "$home" && -d "$home/.config/labnoir" ]] || return 0
+    if [[ "${LABNOIR_RESET_DESKTOP:-0}" == 1 ]]; then
+        run install -D -o "$user" -m 0644 /dev/null "$home/.config/labnoir/first-login.reset"
         run rm -f "$home/.config/labnoir/first-login.done"
-        info "le bureau de $(target_user) sera réappliqué à sa prochaine connexion"
+        info "le bureau de $user sera réappliqué à sa prochaine connexion (config actuelle sauvegardée)"
+    else
+        info "bureau de $user déjà configuré : dock, couleurs et fond conservés (--reset-bureau pour le réappliquer)"
     fi
 }

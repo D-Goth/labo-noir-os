@@ -6,6 +6,7 @@ import shutil
 import subprocess
 import sys
 import tomllib
+import unicodedata
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -311,6 +312,52 @@ def apply(t, with_wallpaper=False):
 
     write(STATE, t.ident + "\n")
     return 0
+
+
+# [THM-11]
+USER_THEMES = DATA_HOME / "labnoir" / "themes"
+
+
+def slug(name):
+    s = unicodedata.normalize("NFKD", name).encode("ascii", "ignore").decode().lower()
+    s = re.sub(r"[^a-z0-9]+", "-", s).strip("-")
+    return s or "mon-theme"
+
+
+def dump(t):
+    def q(v):
+        return '"' + str(v).replace("\\", "\\\\").replace('"', '\\"') + '"'
+
+    lines = [
+        f"nom = {q(t.name)}",
+        f"mode = {q(t.mode)}",
+        f"accent = {q(t.accent)}",
+        "",
+        "[verre]",
+        f"flou = {t.blur}",
+        f"bruit = {t.noise}",
+        f"opacite_terminal = {t.terminal_opacity:.2f}",
+        "",
+        "[fenetres]",
+        f"boutons = {q(t.buttons)}",
+        "",
+        "[fond]",
+        f"image = {q(t.wallpaper or '')}",
+        "",
+        "[orbit]",
+        f"transparence = {t.orbit_alpha}",
+    ]
+    return "\n".join(lines) + "\n"
+
+
+def save(t):
+    path = USER_THEMES / f"{t.ident}.toml"
+    write(path, dump(t))
+    return path
+
+
+def is_user_theme(ident):
+    return (USER_THEMES / f"{ident}.toml").is_file()
 
 
 def current_theme():

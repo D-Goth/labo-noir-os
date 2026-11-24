@@ -7,7 +7,7 @@ import tomllib
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DEFS = os.path.join(ROOT, "docs", "nomenclature.toml")
 DOC = os.path.join(ROOT, "docs", "NOMENCLATURE.md")
-SOURCES = ["install.sh", "lib", "modules", "bin", "arsenal", "desktop/lookandfeel", "scripts", "tools"]
+SOURCES = ["install.sh", "lib", "modules", "bin", "arsenal", "studio", "desktop/lookandfeel", "scripts", "tools"]
 TAG = re.compile(r"^\s*(?:#|//)\s*\[([A-Z]+-\d{2,3})\]\s*$")
 COMMENT = re.compile(r"^\s*(#|//)")
 ALLOWED = re.compile(r"^\s*#\s*(shellcheck\s|!)")

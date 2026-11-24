@@ -15,6 +15,7 @@ module_run() {
     run gtk-update-icon-cache -q /usr/share/icons/hicolor 2>/dev/null || true
 
     dsk_render_defaults
+    dsk_studio
     dsk_system_defaults
     dsk_sddm
     dsk_first_login
@@ -29,6 +30,15 @@ dsk_render_defaults() {
     run "$LABNOIR_PREFIX/bin/labnoir-theme" render colors "$theme" /usr/share/color-schemes/LabONoir.colors
     run "$LABNOIR_PREFIX/bin/labnoir-theme" render konsole "$theme" /usr/share/konsole/LabONoir.colorscheme
     put "$LABNOIR_ROOT/desktop/konsole/LabONoir.profile" /usr/share/konsole/LabONoir.profile
+}
+
+# [DSK-10]
+dsk_studio() {
+    put_dir "$LABNOIR_ROOT/studio" "$LABNOIR_PREFIX/studio"
+    run chmod 0755 "$LABNOIR_PREFIX/studio/studio.py"
+    run ln -sfn "$LABNOIR_PREFIX/studio/studio.py" /usr/local/bin/labnoir-studio
+    put "$LABNOIR_ROOT/config/applications/labnoir-studio.desktop" /usr/share/applications/labnoir-studio.desktop
+    ok "Studio Lab'O Noir : menu des applications ou commande « labnoir-studio »"
 }
 
 # [DSK-03]

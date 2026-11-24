@@ -61,6 +61,14 @@ si `ORBIT_LAYOUT=1`, la disposition d'Orbit Pixel calculée sur la largeur réel
 Plasma n'applique pas un jeu de couleurs qui porte déjà le nom du jeu actif : l'outil alterne entre
 `LabONoir` et `LabONoirB` pour forcer le rechargement.
 
+## Studio de thèmes
+
+`studio/studio.py` (PyQt6) charge `labnoir-theme` comme bibliothèque : un thème appliqué depuis le studio
+l'est exactement comme en ligne de commande. Le studio dessine un aperçu du bureau (barre, fenêtre et
+ses boutons, sélection, terminal translucide, dock), enregistre les thèmes personnels dans
+`~/.local/share/labnoir/themes` sans jamais écraser un thème fourni, et peut appliquer les changements
+au bureau en direct (après 0,7 s sans modification). Les thèmes s'importent et s'exportent en TOML.
+
 ## Red team
 
 Les outils offensifs ne sont pas installés sur le système : ils vivent dans la **Kali officielle**,

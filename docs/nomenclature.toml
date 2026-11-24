@@ -5,6 +5,7 @@ BAS = "Module base"
 PRV = "Confidentialité : module et outil labnoir-privacy"
 DSK = "Bureau : module, look-and-feel Plasma, première connexion"
 THM = "Gestionnaire de thèmes labnoir-theme"
+STU = "Studio Lab'O Noir, éditeur graphique de thèmes (studio/studio.py)"
 DEV = "Module développement"
 DEF = "Module défense"
 RED = "Red team : module et outil labnoir-redteam"
@@ -352,4 +353,40 @@ definition = "Crée la vue d'un type (nmap, lynis, clamav, yara) et lui passe le
 [codes.ARS-15]
 titre = "Case Administrateur"
 definition = "Cochée et verrouillée quand l'outil ou l'option choisie exige root (scan SYN ou UDP, détection du système, rkhunter) ; sinon libre, pour un audit Lynis complet par exemple. Seule la commande est élevée, jamais Arsenal lui-même."
+
+[codes.THM-11]
+titre = "Thèmes personnels"
+definition = "Dossier ~/.local/share/labnoir/themes, identifiant tiré du nom (sans accents ni espaces), écriture d'un thème en TOML et repérage des thèmes personnels (modifiables et supprimables)."
+
+[codes.DSK-10]
+titre = "Installation du studio"
+definition = "Copie le studio dans /opt/labnoir/studio, crée la commande labnoir-studio et son entrée dans le menu des applications."
+
+[codes.STU-01]
+titre = "Moteur de thèmes"
+definition = "Charge labnoir-theme comme bibliothèque (dépôt ou /opt/labnoir) : le studio applique un thème exactement comme la ligne de commande. Couleurs proposées et libellés des boutons."
+
+[codes.STU-02]
+titre = "Aperçu"
+definition = "Dessine un bureau miniature avec le thème en cours d'édition : barre du haut en verre, fenêtre avec ses boutons, sélection à l'accent, terminal translucide et dock."
+
+[codes.STU-03]
+titre = "Fenêtre du studio"
+definition = "Liste des thèmes, formulaire (nom, mode, accent, flou, grain, opacité du terminal, fond d'Orbit Pixel, boutons, fond d'écran), aperçu en direct sur le bureau, boutons Appliquer et Enregistrer."
+
+[codes.STU-04]
+titre = "Liste et choix d'un thème"
+definition = "Liste tous les thèmes (le thème actif marqué à sa couleur), remplit le formulaire et l'aperçu ; seuls les thèmes personnels peuvent être supprimés."
+
+[codes.STU-05]
+titre = "Édition"
+definition = "Rassemble les valeurs du formulaire en thème, met à jour l'aperçu à chaque changement et, si l'aperçu en direct est coché, l'applique au bureau après 0,7 s sans modification ; accent par pastille, pipette ou code hexadécimal ; choix du fond d'écran."
+
+[codes.STU-06]
+titre = "Enregistrement, application, partage"
+definition = "Enregistre dans les thèmes personnels (sans écraser un thème fourni), applique via le moteur (fond d'écran seulement si demandé), duplique, supprime, importe un thème vérifié et exporte un thème sans son fond d'écran."
+
+[codes.STU-07]
+titre = "Lancement"
+definition = "Application Qt, police, feuille de style à l'accent du thème actif."
 

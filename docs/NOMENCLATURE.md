@@ -25,8 +25,9 @@ ne pas le modifier à la main.
 | [`LIB`](#lib) | Bibliothèque commune des modules (lib/common.sh) | 11 |
 | [`BAS`](#bas) | Module base | 1 |
 | [`PRV`](#prv) | Confidentialité : module et outil labnoir-privacy | 7 |
-| [`DSK`](#dsk) | Bureau : module, look-and-feel Plasma, première connexion | 9 |
-| [`THM`](#thm) | Gestionnaire de thèmes labnoir-theme | 10 |
+| [`DSK`](#dsk) | Bureau : module, look-and-feel Plasma, première connexion | 10 |
+| [`THM`](#thm) | Gestionnaire de thèmes labnoir-theme | 11 |
+| [`STU`](#stu) | Studio Lab'O Noir, éditeur graphique de thèmes (studio/studio.py) | 7 |
 | [`DEV`](#dev) | Module développement | 1 |
 | [`DEF`](#def) | Module défense | 1 |
 | [`RED`](#red) | Red team : module et outil labnoir-redteam | 5 |
@@ -528,8 +529,8 @@ module_run() {
     run gtk-update-icon-cache -q /usr/share/icons/hicolor 2>/dev/null || true
 
     dsk_render_defaults
+    dsk_studio
     dsk_system_defaults
-    dsk_sddm
 …
 ```
 
@@ -537,7 +538,7 @@ module_run() {
 
 Génère le jeu de couleurs et le thème du terminal du thème choisi, et installe le profil Konsole.
 
-`modules/30-bureau.sh` ligne 24
+`modules/30-bureau.sh` ligne 25
 
 ```bash
 dsk_render_defaults() {
@@ -554,7 +555,7 @@ dsk_render_defaults() {
 
 kdeglobals, kwinrc (flou, bordures, boutons réduire, agrandir et fermer à droite), konsolerc et plasmarc dans /etc/xdg : ils valent pour tout nouveau compte.
 
-`modules/30-bureau.sh` ligne 34
+`modules/30-bureau.sh` ligne 44
 
 ```bash
 dsk_system_defaults() {
@@ -569,7 +570,7 @@ dsk_system_defaults() {
 
 SDDM avec le thème Breeze et le fond Lab'O Noir.
 
-`modules/30-bureau.sh` ligne 42
+`modules/30-bureau.sh` ligne 52
 
 ```bash
 dsk_sddm() {
@@ -589,7 +590,7 @@ dsk_sddm() {
 
 Installe le lanceur automatique et remet à zéro le marqueur du compte cible pour réappliquer le bureau.
 
-`modules/30-bureau.sh` ligne 55
+`modules/30-bureau.sh` ligne 65
 
 ```bash
 dsk_first_login() {
@@ -685,6 +686,22 @@ conf() { [[ -f "$CONF" ]] && sed -n "s|^$1=||p" "$CONF" | tail -n1; }
 …
 ```
 
+### [DSK-10] Installation du studio
+
+Copie le studio dans /opt/labnoir/studio, crée la commande labnoir-studio et son entrée dans le menu des applications.
+
+`modules/30-bureau.sh` ligne 35
+
+```bash
+dsk_studio() {
+    put_dir "$LABNOIR_ROOT/studio" "$LABNOIR_PREFIX/studio"
+    run chmod 0755 "$LABNOIR_PREFIX/studio/studio.py"
+    run ln -sfn "$LABNOIR_PREFIX/studio/studio.py" /usr/local/bin/labnoir-studio
+    put "$LABNOIR_ROOT/config/applications/labnoir-studio.desktop" /usr/share/applications/labnoir-studio.desktop
+    ok "Studio Lab'O Noir : menu des applications ou commande « labnoir-studio »"
+}
+```
+
 
 ## THM
 
@@ -694,7 +711,7 @@ Gestionnaire de thèmes labnoir-theme
 
 Thèmes et fonds cherchés dans ~/.local/share/labnoir, /opt/labnoir puis le dépôt ; fichier du thème actif.
 
-`bin/labnoir-theme` ligne 12
+`bin/labnoir-theme` ligne 13
 
 ```python
 REPO = Path(__file__).resolve().parent.parent
@@ -704,7 +721,7 @@ REPO = Path(__file__).resolve().parent.parent
 
 Dispositions classique (réduire, agrandir et fermer à droite, par défaut), elementary (fermer à gauche, agrandir à droite) et macos (tout à gauche).
 
-`bin/labnoir-theme` ligne 22
+`bin/labnoir-theme` ligne 23
 
 ```python
 BUTTONS = {
@@ -718,7 +735,7 @@ BUTTONS = {
 
 Nom, mode sombre ou clair, accent, flou et bruit du verre dépoli, opacité du terminal, boutons, fond d'écran, transparence d'Orbit Pixel.
 
-`bin/labnoir-theme` ligne 30
+`bin/labnoir-theme` ligne 31
 
 ```python
 @dataclass
@@ -728,7 +745,7 @@ Nom, mode sombre ou clair, accent, flou et bruit du verre dépoli, opacité du t
 
 Lit le fichier TOML, vérifie l'accent (#RRGGBB), le mode et les boutons, borne les valeurs.
 
-`bin/labnoir-theme` ligne 74
+`bin/labnoir-theme` ligne 75
 
 ```python
 def load(ident):
@@ -750,7 +767,7 @@ def load(ident):
 
 Conversion hexadécimale, mélange de deux couleurs, format KDE et luminance.
 
-`bin/labnoir-theme` ligne 105
+`bin/labnoir-theme` ligne 106
 
 ```python
 def rgb(hexa):
@@ -762,7 +779,7 @@ def rgb(hexa):
 
 Palettes sombre et claire, et génération du fichier .colors avec l'accent (sélection, liens, focus) et un texte de sélection lisible.
 
-`bin/labnoir-theme` ligne 129
+`bin/labnoir-theme` ligne 130
 
 ```python
 PALETTES = {
@@ -784,7 +801,7 @@ PALETTES = {
 
 Couleurs Konsole assorties, accent en rouge ANSI, opacité et flou.
 
-`bin/labnoir-theme` ligne 203
+`bin/labnoir-theme` ligne 204
 
 ```python
 def render_konsole(t):
@@ -806,7 +823,7 @@ def render_konsole(t):
 
 Recherche des outils KDE, lecture et écriture de réglages, écriture atomique de fichiers, compte rendu.
 
-`bin/labnoir-theme` ligne 234
+`bin/labnoir-theme` ligne 235
 
 ```python
 def tool(*names):
@@ -820,7 +837,7 @@ def tool(*names):
 
 Couleurs (en alternant deux noms pour forcer Plasma à recharger), icônes, terminal, flou et boutons de KWin, accent et transparence d'Orbit Pixel, mémorisation du thème. Le fond d'écran n'est remplacé qu'avec --fond (première connexion), pour garder celui choisi par l'utilisateur.
 
-`bin/labnoir-theme` ligne 269
+`bin/labnoir-theme` ligne 270
 
 ```python
 def apply(t, with_wallpaper=False):
@@ -842,7 +859,7 @@ def apply(t, with_wallpaper=False):
 
 list, current, apply (depuis la session) et render (pour l'installateur).
 
-`bin/labnoir-theme` ligne 323
+`bin/labnoir-theme` ligne 370
 
 ```python
 def main(argv=None):
@@ -857,6 +874,163 @@ def main(argv=None):
     r.add_argument("kind", choices=["colors", "konsole"])
     r.add_argument("theme")
     r.add_argument("output", type=Path)
+…
+```
+
+### [THM-11] Thèmes personnels
+
+Dossier ~/.local/share/labnoir/themes, identifiant tiré du nom (sans accents ni espaces), écriture d'un thème en TOML et repérage des thèmes personnels (modifiables et supprimables).
+
+`bin/labnoir-theme` ligne 317
+
+```python
+USER_THEMES = DATA_HOME / "labnoir" / "themes"
+```
+
+
+## STU
+
+Studio Lab'O Noir, éditeur graphique de thèmes (studio/studio.py)
+
+### [STU-01] Moteur de thèmes
+
+Charge labnoir-theme comme bibliothèque (dépôt ou /opt/labnoir) : le studio applique un thème exactement comme la ligne de commande. Couleurs proposées et libellés des boutons.
+
+`studio/studio.py` ligne 20
+
+```python
+HERE = Path(__file__).resolve().parent
+```
+
+### [STU-02] Aperçu
+
+Dessine un bureau miniature avec le thème en cours d'édition : barre du haut en verre, fenêtre avec ses boutons, sélection à l'accent, terminal translucide et dock.
+
+`studio/studio.py` ligne 45
+
+```python
+class Preview(QWidget):
+    def __init__(self):
+        super().__init__()
+        self.theme = None
+        self.setMinimumSize(420, 300)
+
+    def set_theme(self, t):
+        self.theme = t
+        self.update()
+
+    def paintEvent(self, _):
+        t = self.theme
+…
+```
+
+### [STU-03] Fenêtre du studio
+
+Liste des thèmes, formulaire (nom, mode, accent, flou, grain, opacité du terminal, fond d'Orbit Pixel, boutons, fond d'écran), aperçu en direct sur le bureau, boutons Appliquer et Enregistrer.
+
+`studio/studio.py` ligne 166
+
+```python
+class Studio(QMainWindow):
+    def __init__(self):
+        super().__init__()
+        self.setWindowTitle("Studio Lab'O Noir")
+        self.resize(1120, 720)
+        if ICON.exists():
+            self.setWindowIcon(QIcon(str(ICON)))
+        self.theme = None
+        self.loading = False
+        self.live = QTimer(self, singleShot=True, interval=700)
+        self.live.timeout.connect(self.apply_live)
+        self.build()
+…
+```
+
+### [STU-04] Liste et choix d'un thème
+
+Liste tous les thèmes (le thème actif marqué à sa couleur), remplit le formulaire et l'aperçu ; seuls les thèmes personnels peuvent être supprimés.
+
+`studio/studio.py` ligne 333
+
+```python
+def refresh_list(self, select=None):
+    self.list.blockSignals(True)
+    self.list.clear()
+    cur = E.current_theme()
+    for ident in E.all_themes():
+        t = E.load(ident)
+        it = QListWidgetItem(("● " if ident == cur else "   ") + t.name)
+        it.setData(Qt.ItemDataRole.UserRole, ident)
+        it.setForeground(QBrush(QColor(t.accent)) if ident == cur else QBrush(QColor("#E8E8EC")))
+        it.setToolTip(f"{ident} · {t.mode} · {t.accent}" + (" · personnel" if E.is_user_theme(ident) else ""))
+        self.list.addItem(it)
+        if ident == select:
+…
+```
+
+### [STU-05] Édition
+
+Rassemble les valeurs du formulaire en thème, met à jour l'aperçu à chaque changement et, si l'aperçu en direct est coché, l'applique au bureau après 0,7 s sans modification ; accent par pastille, pipette ou code hexadécimal ; choix du fond d'écran.
+
+`studio/studio.py` ligne 380
+
+```python
+def collect(self):
+    t = self.theme
+    mode = next((b.property("value") for b in self.mode_group.buttons() if b.isChecked()), t.mode)
+    buttons = next((b.property("value") for b in self.btn_group.buttons() if b.isChecked()), t.buttons)
+    accent = self.hex.text().strip().upper()
+    if not E.HEX.match(accent):
+        accent = t.accent
+    wall = self.wall.text().strip()
+    return replace(
+        t, name=self.name.text().strip() or t.name, mode=mode, accent=accent, blur=self.blur.value(),
+        noise=self.noise.value(), terminal_opacity=self.opacity.value() / 100, buttons=buttons,
+        wallpaper=Path(wall) if wall and Path(os.path.expanduser(wall)).is_file() else None,
+…
+```
+
+### [STU-06] Enregistrement, application, partage
+
+Enregistre dans les thèmes personnels (sans écraser un thème fourni), applique via le moteur (fond d'écran seulement si demandé), duplique, supprime, importe un thème vérifié et exporte un thème sans son fond d'écran.
+
+`studio/studio.py` ligne 431
+
+```python
+def save_theme(self):
+    t = self.collect()
+    if not E.is_user_theme(t.ident) or t.ident != E.slug(t.name):
+        ident = E.slug(t.name)
+        if not E.is_user_theme(ident) and E.find_theme(ident):
+            ident = ident + "-perso"
+        t = replace(t, ident=ident)
+    path = E.save(t)
+    self.theme = t
+    self.status.setText(f"Enregistré : {path}")
+    self.refresh_list(t.ident)
+    return t
+…
+```
+
+### [STU-07] Lancement
+
+Application Qt, police, feuille de style à l'accent du thème actif.
+
+`studio/studio.py` ligne 509
+
+```python
+def main():
+    app = QApplication(sys.argv)
+    app.setApplicationName("Studio Lab'O Noir")
+    app.setDesktopFileName("labnoir-studio")
+    app.setStyle("Fusion")
+    qss = HERE / "style.qss"
+    if qss.exists():
+        try:
+            accent = E.load(E.current_theme() or "labonoir").accent
+        except SystemExit:
+            accent = "#FF1654"
+        app.setStyleSheet(qss.read_text(encoding="utf-8").replace("#FF1654", accent))
 …
 ```
 

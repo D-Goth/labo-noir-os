@@ -15,7 +15,7 @@ date de naissance ni de télémétrie.
 |---|---|
 | `base` | Outils de base, Flathub, commandes `labnoir-*` |
 | `confidentialite` | Pas de popularity-contest, retours d'usage de KDE coupés, garde-fou contre le service de vérification d'âge, `labnoir-privacy` |
-| `bureau` | Plasma 6 : barre fine en haut, dock flottant, verre dépoli, thème Lab'O Noir, Konsole translucide, écran de connexion assorti |
+| `bureau` | Plasma 6 : barre fine en haut, dock flottant, verre dépoli, thème Lab'O Noir, Konsole translucide, écran de connexion assorti, Studio de thèmes |
 | `dev` | Compilateurs, Python, Node, Go, Rust (rustup), Podman, Distrobox, Kate, Neovim, VSCodium |
 | `defense` | Wireshark, Suricata, YARA, ClamAV, rkhunter, Lynis, AIDE, auditd, Sleuth Kit, Volatility 3… |
 | `redteam` | Kali officielle isolée dans un conteneur Distrobox, `labnoir-redteam` |
@@ -47,6 +47,7 @@ Le journal est dans `/var/log/labnoir-install.log`. Un paquet absent des dépôt
 
 | Commande | Rôle |
 |---|---|
+| `labnoir-studio` | Studio de thèmes : accent, flou, boutons, fond, avec aperçu (aussi dans le menu) |
 | `labnoir-theme list` | Thèmes disponibles (`labonoir`, `nuit-bleue`, `givre`) |
 | `labnoir-theme apply nuit-bleue` | Change d'accent, de flou, de boutons de fenêtres, et Orbit Pixel suit ; ton fond d'écran est gardé (`--fond` pour prendre celui du thème) |
 | `labnoir-redteam init` | Crée la Kali isolée (top 10 des outils ; `--full` ou `--large` pour plus) |
@@ -55,8 +56,11 @@ Le journal est dans `/var/log/labnoir-install.log`. Un paquet absent des dépôt
 | `labnoir-privacy` | Vérifie : pas de date de naissance, pas de service d'âge, pas de télémétrie |
 | `arsenal` | Lanceur graphique des outils |
 
-Un thème est un petit fichier TOML : copie `themes/labonoir.toml` dans `~/.local/share/labnoir/themes/`,
-renomme-le, change l'accent ou le flou, puis `labnoir-theme apply ton-theme`.
+Un thème est un petit fichier TOML. Le plus simple est le **Studio Lab'O Noir** : choisis un thème,
+change l'accent, le flou ou les boutons, regarde l'aperçu, puis **Enregistrer et appliquer**.
+Tes thèmes vont dans `~/.local/share/labnoir/themes/` et s'exportent pour être partagés.
+
+![Studio Lab'O Noir](docs/img/studio.png)
 
 ## Confidentialité
 

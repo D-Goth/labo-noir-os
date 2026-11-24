@@ -25,7 +25,7 @@ definition = "Repère le dossier du dépôt, charge la bibliothèque commune et 
 
 [codes.INS-02]
 titre = "Options"
-definition = "Aide et lecture des options : --list, --only, --skip, --user, --dry-run, --yes, --force."
+definition = "Aide et lecture des options : --list, --only, --skip, --user, --dry-run, --yes, --force, --reset-bureau."
 
 [codes.INS-03]
 titre = "Modules"
@@ -129,11 +129,11 @@ definition = "kdeglobals, kwinrc (flou, bordures, boutons réduire, agrandir et 
 
 [codes.DSK-04]
 titre = "Écran de connexion"
-definition = "SDDM avec le thème Breeze et le fond Lab'O Noir."
+definition = "SDDM avec le thème Breeze et le fond Lab'O Noir ; un fond d'écran de connexion choisi par l'utilisateur est conservé."
 
 [codes.DSK-05]
 titre = "Première connexion"
-definition = "Installe le lanceur automatique et remet à zéro le marqueur du compte cible pour réappliquer le bureau."
+definition = "Installe le lanceur automatique. Un bureau déjà configuré est conservé ; avec --reset-bureau, demande sa réapplication à la prochaine connexion."
 
 [codes.DSK-06]
 titre = "Fond d'écran"
@@ -149,7 +149,7 @@ definition = "Panneau flottant centré, à la taille de son contenu, qui s'effac
 
 [codes.DSK-09]
 titre = "labnoir-first-login"
-definition = "Une seule fois par compte : applique le look-and-feel avec sa disposition, le thème choisi, puis la disposition Orbit Pixel si elle est activée ; journal dans ~/.config/labnoir."
+definition = "Une seule fois par compte : applique le look-and-feel avec sa disposition, le thème choisi, puis la disposition Orbit Pixel si elle est activée ; journal dans ~/.config/labnoir. Le marqueur de réapplication est retiré à la fin."
 
 [codes.THM-01]
 titre = "Emplacements"
@@ -277,7 +277,7 @@ definition = "Application Qt, police et feuille de style à l'accent du thème. 
 
 [codes.ORB-01]
 titre = "Module Orbit Pixel"
-definition = "Dépendances, installation du widget pour tout le système, script de disposition et réglage ORBIT_LAYOUT."
+definition = "Dépendances, installation du widget pour tout le système, script de disposition et réglage ORBIT_LAYOUT (un choix déjà fait est conservé, sauf si LABNOIR_ORBIT_LAYOUT est fourni)."
 
 [codes.HRD-01]
 titre = "Module durcissement"
@@ -363,6 +363,14 @@ definition = "Cochée et verrouillée quand l'outil ou l'option choisie exige ro
 titre = "Thèmes personnels"
 definition = "Dossier ~/.local/share/labnoir/themes, identifiant tiré du nom (sans accents ni espaces), écriture d'un thème en TOML et repérage des thèmes personnels (modifiables et supprimables)."
 
+[codes.DSK-12]
+titre = "Bureau déjà personnalisé"
+definition = "Si le compte a déjà un thème Lab'O Noir et qu'aucune réapplication n'est demandée, la première connexion ne modifie rien."
+
+[codes.DSK-13]
+titre = "Sauvegarde avant application"
+definition = "Copie la configuration en place (panneaux, couleurs, KWin, Konsole, Orbit Pixel) dans ~/.config/labnoir/sauvegardes/<date> avant d'appliquer le bureau."
+
 [codes.DSK-10]
 titre = "Installation du studio"
 definition = "Copie le studio dans /opt/labnoir/studio, crée la commande labnoir-studio et son entrée dans le menu des applications, ainsi que celle de la fenêtre À propos."
@@ -401,7 +409,7 @@ definition = "Repère l'hyperviseur (systemd-detect-virt) et installe ses outils
 
 [codes.BAS-03]
 titre = "Navigateur"
-definition = "Installe Zen Browser depuis Flathub et le choisit comme navigateur par défaut du compte cible."
+definition = "Installe Zen Browser depuis Flathub et le choisit comme navigateur par défaut du compte cible, sauf si celui-ci en a déjà choisi un autre que Firefox."
 
 [codes.THM-12]
 titre = "Invite du terminal"

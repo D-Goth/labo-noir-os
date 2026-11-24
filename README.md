@@ -131,11 +131,19 @@ Ferme puis rouvre ta session : le bureau Lab'O Noir s'applique tout seul à la p
 | `--skip redteam,virtualisation` | saute ces modules (installation plus rapide) |
 | `--user NOM` | compte à personnaliser (par défaut : celui qui lance `sudo`) |
 | `--yes` | pas de confirmation |
+| `--reset-bureau` | réapplique le bureau Lab'O Noir à la prochaine connexion (voir plus bas) |
 
 Le journal est dans `/var/log/labnoir-install.log`. Un paquet absent des dépôts est signalé dans le bilan
 sans arrêter l'installation, et un module en échec n'empêche pas les autres.
 
 **Mettre à jour** : `git pull`, puis relance `sudo ./install.sh` (ou seulement les modules concernés).
+Une mise à jour ne touche pas à ce que tu as personnalisé : dock, couleurs, fond d'écran, navigateur par
+défaut, fond de l'écran de connexion et choix d'Orbit Pixel restent tels quels.
+
+**Repartir du bureau d'origine** : `sudo ./install.sh --only bureau --reset-bureau`, puis reconnecte-toi.
+Avant d'appliquer quoi que ce soit, la configuration en place (panneaux, couleurs, KWin, Konsole, Orbit Pixel)
+est copiée dans `~/.config/labnoir/sauvegardes/<date>/` ; pour revenir en arrière, recopie ces fichiers dans
+`~/.config` et reconnecte-toi.
 
 ## Au quotidien
 

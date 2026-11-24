@@ -8,10 +8,28 @@ CONF="/etc/labnoir/labnoir.conf"
 PREFIX="${LABNOIR_PREFIX:-/opt/labnoir}"
 LOG="$STATE_DIR/first-login.log"
 
+RESET="$STATE_DIR/first-login.reset"
+CFG="${XDG_CONFIG_HOME:-$HOME/.config}"
+
 [[ -f "$DONE" ]] && exit 0
 mkdir -p "$STATE_DIR"
 exec >>"$LOG" 2>&1
 echo "== $(date '+%F %T')"
+
+# [DSK-12]
+if [[ -f "$STATE_DIR/theme" && ! -f "$RESET" ]]; then
+    echo "bureau déjà personnalisé : rien n'est modifié"
+    touch "$DONE"
+    exit 0
+fi
+
+# [DSK-13]
+SAVE="$STATE_DIR/sauvegardes/$(date '+%F_%H%M%S')"
+mkdir -p "$SAVE"
+for f in plasma-org.kde.plasma.desktop-appletsrc plasmashellrc kdeglobals kwinrc konsolerc orbitpixelrc; do
+    [[ -f "$CFG/$f" ]] && cp -a "$CFG/$f" "$SAVE/"
+done
+echo "configuration précédente sauvegardée dans $SAVE"
 
 conf() { [[ -f "$CONF" ]] && sed -n "s|^$1=||p" "$CONF" | tail -n1; }
 
@@ -29,4 +47,5 @@ if [[ "$(conf ORBIT_LAYOUT)" == 1 && -x "$PREFIX/widgets/orbitpixel/place-layout
     "$PREFIX/widgets/orbitpixel/place-layout.sh" 'screenGeometry(desktops()[0].screen).width' || echo "Orbit Pixel non placé"
 fi
 
+rm -f "$RESET"
 touch "$DONE"

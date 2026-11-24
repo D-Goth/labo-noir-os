@@ -105,7 +105,7 @@
         {
           "id": "lynis",
           "name": "Lynis",
-          "description": "Audit de sécurité du système, avec l'indice de durcissement (lancé sans sudo : tests limités).",
+          "description": "Audit de sécurité du système, avec l'indice de durcissement. Coche « Administrateur » pour l'audit complet.",
           "program": "lynis",
           "runner": "host",
           "params": [
@@ -160,7 +160,6 @@
           "description": "Recherche de rootkits.",
           "program": "rkhunter",
           "runner": "host",
-          "terminal": true,
           "sudo": true,
           "params": [
             {
@@ -172,7 +171,8 @@
                   "label": "Vérification",
                   "args": [
                     "--check",
-                    "--sk"
+                    "--sk",
+                    "--nocolors"
                   ]
                 }
               ],
@@ -204,16 +204,18 @@
                   ]
                 },
                 {
-                  "label": "Furtif SYN (-sS, root)",
+                  "label": "Furtif SYN (-sS)",
                   "args": [
                     "-sS"
-                  ]
+                  ],
+                  "root": true
                 },
                 {
-                  "label": "UDP (-sU, root)",
+                  "label": "UDP (-sU)",
                   "args": [
                     "-sU"
-                  ]
+                  ],
+                  "root": true
                 },
                 {
                   "label": "Versions des services (-sV)",
@@ -238,7 +240,8 @@
               "label": "Détection du système (-O)",
               "args": [
                 "-O"
-              ]
+              ],
+              "root": true
             },
             {
               "type": "flag",

@@ -25,6 +25,7 @@ jobs:
           pip install --quiet PyQt6
           sudo apt-get install -y -qq libegl1 libxkbcommon0 libfontconfig1 >/dev/null
           QT_QPA_PLATFORM=offscreen python3 tests/test_vues.py
+          QT_QPA_PLATFORM=offscreen python3 tests/test_arsenal_cmd.py
       - name: Thèmes
         run: |
           for t in themes/*.toml; do

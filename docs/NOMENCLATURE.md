@@ -32,7 +32,7 @@ ne pas le modifier à la main.
 | [`RED`](#red) | Red team : module et outil labnoir-redteam | 5 |
 | [`VIR`](#vir) | Module virtualisation | 1 |
 | [`MSG`](#msg) | Module messagerie | 1 |
-| [`ARS`](#ars) | Arsenal, lanceur graphique des outils | 14 |
+| [`ARS`](#ars) | Arsenal, lanceur graphique des outils | 15 |
 | [`ORB`](#orb) | Module Orbit Pixel | 1 |
 | [`HRD`](#hrd) | Module durcissement | 5 |
 | [`VUE`](#vue) | Vues graphiques d'Arsenal (arsenal/vues.py) | 9 |
@@ -1149,7 +1149,7 @@ class Runners:
 
 ### [ARS-06] Construction de la commande
 
-Arguments dans l'ordre des paramètres (case, choix, texte avec option, préfixe ou position), champs obligatoires, ~ développé ; options de rapport de la vue juste après le programme ; sudo et passage par la Kali. Aucun shell : une saisie reste un seul argument.
+Arguments dans l'ordre des paramètres (case, choix, texte avec option, préfixe ou position), champs obligatoires, ~ développé ; options de rapport de la vue juste après le programme ; élévation de la seule commande (pkexec sur le système, sudo dans un terminal ou dans la Kali) quand l'outil ou une option choisie l'exige ; passage par la Kali. Aucun shell : une saisie reste un seul argument.
 
 `arsenal/arsenal.py` ligne 90
 
@@ -1173,7 +1173,7 @@ def build_args(tool, values):
 
 Konsole (fenêtre gardée ouverte) ou terminal par défaut pour les outils interactifs ou qui demandent sudo.
 
-`arsenal/arsenal.py` ligne 137
+`arsenal/arsenal.py` ligne 155
 
 ```python
 def terminal_command(cmd):
@@ -1188,7 +1188,7 @@ def terminal_command(cmd):
 
 Champs générés depuis les paramètres de l'outil, valeurs par défaut, mise à jour de l'aperçu à chaque saisie.
 
-`arsenal/arsenal.py` ligne 146
+`arsenal/arsenal.py` ligne 164
 
 ```python
 class ParamForm(QWidget):
@@ -1210,7 +1210,7 @@ class ParamForm(QWidget):
 
 Recherche, liste des outils (grisés s'ils sont indisponibles), état de la Kali, fiche de l'outil, aperçu de la commande, boutons et sortie.
 
-`arsenal/arsenal.py` ligne 194
+`arsenal/arsenal.py` ligne 212
 
 ```python
 class Arsenal(QMainWindow):
@@ -1224,7 +1224,7 @@ class Arsenal(QMainWindow):
         self.runners = Runners()
         self.tool = None
         self.running_tool = None
-        self.proc = None
+        self.running_admin = False
 …
 ```
 
@@ -1232,7 +1232,7 @@ class Arsenal(QMainWindow):
 
 Affiche la fiche, l'environnement, l'avertissement éventuel et le formulaire ; aperçu de la commande exacte.
 
-`arsenal/arsenal.py` ligne 351
+`arsenal/arsenal.py` ligne 374
 
 ```python
 def select(self, item, _prev=None):
@@ -1252,9 +1252,9 @@ def select(self, item, _prev=None):
 
 ### [ARS-11] Exécution
 
-Prépare le rapport de la vue, lance l'outil dans un terminal ou avec QProcess (sortie en direct gardée pour la vue, arrêt propre puis forcé après 3 s, code de retour).
+Prépare le rapport de la vue, lance l'outil dans un terminal ou avec QProcess (sortie en direct gardée pour la vue, code de retour). Arrêt propre puis forcé après 3 s ; pour une commande administrateur, l'arrêt passe lui aussi par pkexec.
 
-`arsenal/arsenal.py` ligne 395
+`arsenal/arsenal.py` ligne 439
 
 ```python
 def run(self):
@@ -1267,8 +1267,8 @@ def run(self):
     vue = self.tool.get("vue") or {}
     self.report = vues.scratch(vue["fichier"]) if vue.get("fichier") else None
     try:
-        cmd = full_command(self.tool, runner, build_args(self.tool, self.form.values()), self.report)
-    except ValueError as e:
+        admin = self.admin.isChecked()
+        if admin and runner == "host" and not self.tool.get("terminal") and not shutil.which("pkexec"):
 …
 ```
 
@@ -1276,7 +1276,7 @@ def run(self):
 
 Application Qt, style, police et feuille de style à l'accent du thème.
 
-`arsenal/arsenal.py` ligne 481
+`arsenal/arsenal.py` ligne 536
 
 ```python
 def main():
@@ -1296,7 +1296,7 @@ def main():
 
 Crée la vue graphique de l'outil choisi à côté de l'onglet Sortie, ou la retire s'il n'en a pas.
 
-`arsenal/arsenal.py` ligne 369
+`arsenal/arsenal.py` ligne 396
 
 ```python
 def set_view(self, tool):
@@ -1315,7 +1315,7 @@ def set_view(self, tool):
 
 À la fin de l'exécution, lit le rapport ou la sortie et affiche la vue ; signale un rapport absent ou illisible.
 
-`arsenal/arsenal.py` ligne 448
+`arsenal/arsenal.py` ligne 496
 
 ```python
 def show_view(self):
@@ -1330,6 +1330,28 @@ def show_view(self):
         self.status.setText(self.status.text() + " " + err)
     else:
         self.tabs.setCurrentIndex(1)
+…
+```
+
+### [ARS-15] Case Administrateur
+
+Cochée et verrouillée quand l'outil ou l'option choisie exige root (scan SYN ou UDP, détection du système, rkhunter) ; sinon libre, pour un audit Lynis complet par exemple. Seule la commande est élevée, jamais Arsenal lui-même.
+
+`arsenal/arsenal.py` ligne 408
+
+```python
+def sync_admin(self):
+    needed = needs_admin(self.tool, self.form.values())
+    if needed and not self.admin.isChecked():
+        self.admin.blockSignals(True)
+        self.admin.setChecked(True)
+        self.admin.blockSignals(False)
+        self.admin_forced = True
+    elif not needed and self.admin_forced:
+        self.admin.blockSignals(True)
+        self.admin.setChecked(False)
+        self.admin.blockSignals(False)
+        self.admin_forced = False
 …
 ```
 

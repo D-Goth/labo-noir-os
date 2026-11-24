@@ -125,10 +125,28 @@ def view_args(tool, report):
     return [a.replace("{fichier}", path).replace("{dossier}", folder) for a in vue["args"]]
 
 
-def full_command(tool, runner, args, report=None):
-    cmd = [tool["program"], *view_args(tool, report), *args]
+def needs_admin(tool, values):
     if tool.get("sudo"):
-        cmd = ["sudo", *cmd]
+        return True
+    for p in tool.get("params", []):
+        v = values.get(p["id"])
+        if p["type"] == "flag" and v and p.get("root"):
+            return True
+        if p["type"] == "choice":
+            opts = p["options"]
+            idx = v if isinstance(v, int) and 0 <= v < len(opts) else p.get("default", 0)
+            if opts[idx].get("root"):
+                return True
+    return False
+
+
+def full_command(tool, runner, args, report=None, admin=False):
+    cmd = [tool["program"], *view_args(tool, report), *args]
+    if admin:
+        if runner == "kali" or tool.get("terminal"):
+            cmd = ["sudo", *cmd]
+        else:
+            cmd = ["pkexec", *cmd]
     if runner == "kali":
         cmd = ["distrobox", "enter", BOX, "--", *cmd]
     return cmd
@@ -203,6 +221,7 @@ class Arsenal(QMainWindow):
         self.runners = Runners()
         self.tool = None
         self.running_tool = None
+        self.running_admin = False
         self.proc = None
         self.build_ui()
         self.populate()
@@ -272,11 +291,15 @@ class Arsenal(QMainWindow):
         self.stop_btn = QPushButton("Arrêter")
         self.stop_btn.clicked.connect(self.stop)
         self.stop_btn.setEnabled(False)
+        self.admin = QCheckBox("Administrateur")
+        self.admin.setToolTip("Lance seulement cette commande en root : Plasma demande ton mot de passe")
+        self.admin.toggled.connect(self.update_preview)
+        self.admin_forced = False
         copy = QPushButton("Copier la commande")
         copy.clicked.connect(lambda: QApplication.clipboard().setText(self.preview.text()))
         clear = QPushButton("Effacer")
         clear.clicked.connect(lambda: self.output.clear())
-        for b in (self.run_btn, self.stop_btn, copy):
+        for b in (self.run_btn, self.stop_btn, self.admin, copy):
             actions.addWidget(b)
         actions.addStretch(1)
         actions.addWidget(clear)
@@ -361,6 +384,10 @@ class Arsenal(QMainWindow):
         self.badge.show()
         self.warning.setText(why)
         self.warning.setVisible(bool(why))
+        self.admin.blockSignals(True)
+        self.admin.setChecked(False)
+        self.admin.blockSignals(False)
+        self.admin_forced = False
         self.form.build(tool)
         self.set_view(tool)
         self.set_enabled(ok)
@@ -378,12 +405,29 @@ class Arsenal(QMainWindow):
             self.tabs.addTab(self.view, "Vue")
         self.tabs.setCurrentIndex(0)
 
+    # [ARS-15]
+    def sync_admin(self):
+        needed = needs_admin(self.tool, self.form.values())
+        if needed and not self.admin.isChecked():
+            self.admin.blockSignals(True)
+            self.admin.setChecked(True)
+            self.admin.blockSignals(False)
+            self.admin_forced = True
+        elif not needed and self.admin_forced:
+            self.admin.blockSignals(True)
+            self.admin.setChecked(False)
+            self.admin.blockSignals(False)
+            self.admin_forced = False
+        self.admin.setEnabled(not needed)
+
     def update_preview(self, *_):
         if not self.tool:
             return
+        self.sync_admin()
         runner, _, _ = self.runners.resolve(self.tool)
         try:
-            cmd = full_command(self.tool, runner, build_args(self.tool, self.form.values()))
+            cmd = full_command(self.tool, runner, build_args(self.tool, self.form.values()),
+                               admin=self.admin.isChecked())
             self.preview.setText(shlex.join(cmd))
             self.preview.setProperty("invalid", False)
         except ValueError as e:
@@ -403,14 +447,18 @@ class Arsenal(QMainWindow):
         vue = self.tool.get("vue") or {}
         self.report = vues.scratch(vue["fichier"]) if vue.get("fichier") else None
         try:
-            cmd = full_command(self.tool, runner, build_args(self.tool, self.form.values()), self.report)
+            admin = self.admin.isChecked()
+            if admin and runner == "host" and not self.tool.get("terminal") and not shutil.which("pkexec"):
+                raise ValueError("pkexec absent : sudo apt install pkexec")
+            cmd = full_command(self.tool, runner, build_args(self.tool, self.form.values()), self.report, admin)
         except ValueError as e:
             self.status.setText(str(e))
             return
         self.buffer = []
         self.running_tool = self.tool
+        self.running_admin = admin and runner == "host" and not self.tool.get("terminal")
         self.output.appendPlainText(f"$ {shlex.join(cmd)}")
-        if self.tool.get("terminal") or self.tool.get("sudo"):
+        if self.tool.get("terminal"):
             term = terminal_command(cmd)
             if not term:
                 self.status.setText("Aucun terminal trouvé (konsole)")
@@ -427,7 +475,7 @@ class Arsenal(QMainWindow):
         self.proc.start(cmd[0], cmd[1:])
         self.run_btn.setEnabled(False)
         self.stop_btn.setEnabled(True)
-        self.status.setText("En cours…")
+        self.status.setText("En cours… (mot de passe demandé par Plasma)" if self.running_admin else "En cours…")
 
     def read_output(self):
         data = bytes(self.proc.readAllStandardOutput()).decode("utf-8", "replace")
@@ -467,9 +515,16 @@ class Arsenal(QMainWindow):
             self.set_enabled(True)
 
     def stop(self):
-        if self.proc:
-            self.proc.terminate()
-            QTimer.singleShot(3000, lambda: self.proc and self.proc.kill())
+        if not self.proc:
+            return
+        if self.running_admin:
+            pid = self.proc.processId()
+            if pid:
+                QProcess.startDetached("pkexec", ["kill", "-TERM", str(pid)])
+                self.status.setText("Arrêt demandé (mot de passe administrateur).")
+            return
+        self.proc.terminate()
+        QTimer.singleShot(3000, lambda: self.proc and self.proc.kill())
 
     def closeEvent(self, e):
         if self.proc:

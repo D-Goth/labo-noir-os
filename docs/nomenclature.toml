@@ -247,7 +247,7 @@ definition = "Présence de Distrobox et de la Kali isolée ; pour chaque outil :
 
 [codes.ARS-06]
 titre = "Construction de la commande"
-definition = "Arguments dans l'ordre des paramètres (case, choix, texte avec option, préfixe ou position), champs obligatoires, ~ développé ; options de rapport de la vue juste après le programme ; sudo et passage par la Kali. Aucun shell : une saisie reste un seul argument."
+definition = "Arguments dans l'ordre des paramètres (case, choix, texte avec option, préfixe ou position), champs obligatoires, ~ développé ; options de rapport de la vue juste après le programme ; élévation de la seule commande (pkexec sur le système, sudo dans un terminal ou dans la Kali) quand l'outil ou une option choisie l'exige ; passage par la Kali. Aucun shell : une saisie reste un seul argument."
 
 [codes.ARS-07]
 titre = "Terminal"
@@ -267,7 +267,7 @@ definition = "Affiche la fiche, l'environnement, l'avertissement éventuel et le
 
 [codes.ARS-11]
 titre = "Exécution"
-definition = "Prépare le rapport de la vue, lance l'outil dans un terminal ou avec QProcess (sortie en direct gardée pour la vue, arrêt propre puis forcé après 3 s, code de retour)."
+definition = "Prépare le rapport de la vue, lance l'outil dans un terminal ou avec QProcess (sortie en direct gardée pour la vue, code de retour). Arrêt propre puis forcé après 3 s ; pour une commande administrateur, l'arrêt passe lui aussi par pkexec."
 
 [codes.ARS-12]
 titre = "Lancement"
@@ -348,4 +348,8 @@ definition = "Fichiers détectés par ClamAV ou YARA avec la signature ou la rè
 [codes.VUE-09]
 titre = "Choix et affichage d'une vue"
 definition = "Crée la vue d'un type (nmap, lynis, clamav, yara) et lui passe le rapport ou la sortie de l'outil."
+
+[codes.ARS-15]
+titre = "Case Administrateur"
+definition = "Cochée et verrouillée quand l'outil ou l'option choisie exige root (scan SYN ou UDP, détection du système, rkhunter) ; sinon libre, pour un audit Lynis complet par exemple. Seule la commande est élevée, jamais Arsenal lui-même."
 

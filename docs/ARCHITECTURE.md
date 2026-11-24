@@ -70,7 +70,12 @@ vraies VM (QEMU/KVM) avec instantanés : l'isolation par conteneur ne suffit pas
 
 Arsenal choisit l'environnement de chaque outil : système, Kali, ou automatique (système si l'outil y
 est installé). La commande est construite argument par argument, sans shell : une saisie ne peut pas
-injecter de commande. Les outils interactifs ou qui demandent `sudo` s'ouvrent dans Konsole.
+injecter de commande. Les outils interactifs s'ouvrent dans Konsole.
+
+Arsenal ne tourne jamais en root. Quand une commande en a besoin (scan SYN, détection du système,
+rkhunter, ou case « Administrateur » cochée), **seule cette commande** est élevée : `pkexec` sur le
+système (Plasma demande le mot de passe, la sortie et la vue restent dans Arsenal), `sudo` dans un
+terminal ou dans la Kali isolée.
 
 Certains outils ont une **vue graphique** (`arsenal/vues.py`), déclarée dans `tools.json` par `"vue"` :
 Arsenal ajoute l'option de rapport machine (`-oX` pour Nmap, `--report-file` pour Lynis) vers

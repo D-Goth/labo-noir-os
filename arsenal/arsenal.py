@@ -38,7 +38,7 @@ def load_tools():
 
 
 # [ARS-04]
-def theme_accent():
+def theme_data():
     try:
         ident = (CONFIG_HOME / "labnoir" / "theme").read_text(encoding="utf-8").strip()
     except OSError:
@@ -48,10 +48,39 @@ def theme_accent():
         if p.is_file():
             try:
                 with open(p, "rb") as f:
-                    return tomllib.load(f).get("accent", "#FF1654")
+                    return tomllib.load(f)
             except (OSError, tomllib.TOMLDecodeError):
                 break
-    return "#FF1654"
+    return {}
+
+
+def theme_accent():
+    return theme_data().get("accent", "#FF1654")
+
+
+def kvantum_active():
+    try:
+        text = (CONFIG_HOME / "kdeglobals").read_text(encoding="utf-8")
+    except OSError:
+        return False
+    return any(line.strip().lower() == "widgetstyle=kvantum" for line in text.splitlines())
+
+
+def glass_opacity():
+    glass = theme_data().get("verre", {})
+    if not glass.get("fenetres") or not kvantum_active():
+        return None
+    return max(0.6, min(1.0, float(glass.get("opacite_fenetres", 0.85))))
+
+
+def glass_qss(qss, opacity):
+    if opacity is None:
+        return qss
+    alpha = round(opacity * 255)
+    for hexa in ("#0E0E10", "#141417"):
+        r, g, b = (int(hexa[i:i + 2], 16) for i in (1, 3, 5))
+        qss = qss.replace(f"background: {hexa};", f"background: rgba({r}, {g}, {b}, {alpha});", 1)
+    return qss
 
 
 # [ARS-05]
@@ -253,7 +282,12 @@ class Arsenal(QMainWindow):
         sl.addWidget(self.kali_state)
         refresh = QPushButton("Actualiser")
         refresh.clicked.connect(self.refresh_runners)
-        sl.addWidget(refresh)
+        about = QPushButton("À propos")
+        about.clicked.connect(lambda: QProcess.startDetached("labnoir-about", []))
+        foot = QHBoxLayout()
+        foot.addWidget(refresh, 1)
+        foot.addWidget(about)
+        sl.addLayout(foot)
         split.addWidget(side)
 
         main = QFrame(objectName="main")
@@ -545,10 +579,12 @@ def main():
     app = QApplication(sys.argv)
     app.setApplicationName("Arsenal")
     app.setDesktopFileName("labnoir-arsenal")
-    app.setStyle("Fusion")
+    opacity = glass_opacity()
+    if opacity is None:
+        app.setStyle("Fusion")
     if STYLE.exists():
         vues.ACCENT = theme_accent()
-        app.setStyleSheet(STYLE.read_text(encoding="utf-8").replace("#FF1654", vues.ACCENT))
+        app.setStyleSheet(glass_qss(STYLE.read_text(encoding="utf-8"), opacity).replace("#FF1654", vues.ACCENT))
     app.setFont(QFont("Inter", 10))
     w = Arsenal()
     w.show()

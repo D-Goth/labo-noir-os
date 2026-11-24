@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=À propos de Lab'O Noir
+Comment=Version, licence et crédits
+Exec=/usr/local/bin/labnoir-about
+Icon=labonoir
+Terminal=false
+Categories=System;Qt;KDE;
+Keywords=crédits;version;licence;

@@ -201,6 +201,7 @@ Clic droit sur le dock, « Afficher la configuration du panneau » : largeur « 
 
 - [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) : organisation du dépôt et choix techniques
 - [docs/NOMENCLATURE.md](docs/NOMENCLATURE.md) : chaque code de référence du code, avec sa définition et un extrait
+- [CREDITS.md](CREDITS.md) : remerciements, projets sur lesquels Lab'O Noir s'appuie, et un clin d'œil
 - [ROADMAP.md](ROADMAP.md) : la suite (ISO installable, client bitchat, VM prêtes…)
 
 Le code ne contient pas de commentaires explicatifs mais des codes de référence (`# [INS-04]`) définis dans

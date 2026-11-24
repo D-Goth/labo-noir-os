@@ -15,7 +15,7 @@ jobs:
           shellcheck -x install.sh lib/common.sh modules/*.sh tools/*.sh \
             bin/labnoir-privacy bin/labnoir-redteam bin/labnoir-first-login
       - name: Python
-        run: python3 -m py_compile bin/labnoir-theme arsenal/arsenal.py arsenal/vues.py studio/studio.py scripts/nomenclature.py
+        run: python3 -m py_compile bin/labnoir-theme bin/labnoir-about arsenal/arsenal.py arsenal/vues.py studio/studio.py scripts/nomenclature.py
       - name: Nomenclature
         run: python3 scripts/nomenclature.py --check
       - name: Catalogue Arsenal

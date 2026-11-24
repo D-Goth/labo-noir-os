@@ -16,6 +16,7 @@ ORB = "Module Orbit Pixel"
 HRD = "Module durcissement"
 VUE = "Vues graphiques d'Arsenal (arsenal/vues.py)"
 OUT = "Outils du dépôt (vérifications, CI)"
+ABT = "Fenêtre À propos (labnoir-about)"
 
 
 [codes.INS-01]
@@ -88,7 +89,7 @@ definition = "Écrit et lit les clés de /etc/labnoir/labnoir.conf (version, com
 
 [codes.BAS-01]
 titre = "Module base"
-definition = "Outils de base, Flathub, copie des outils, thèmes et ressources dans /opt/labnoir, liens des commandes labnoir-*, réglages initiaux."
+definition = "Outils de base, Flathub, copie des outils, thèmes et ressources dans /opt/labnoir, liens des commandes labnoir-*, crédits et numéro de version, réglages initiaux."
 
 [codes.PRV-01]
 titre = "Module confidentialité"
@@ -124,7 +125,7 @@ definition = "Génère le jeu de couleurs et le thème du terminal du thème cho
 
 [codes.DSK-03]
 titre = "Réglages par défaut du système"
-definition = "kdeglobals, kwinrc (flou, bordures, boutons réduire, agrandir et fermer à droite), konsolerc et plasmarc dans /etc/xdg : ils valent pour tout nouveau compte."
+definition = "kdeglobals, kwinrc (flou, bordures, boutons réduire, agrandir et fermer à droite), konsolerc, plasmarc et kcm-about-distrorc (logo, site et nom de Lab'O Noir dans « À propos de ce système ») dans /etc/xdg : ils valent pour tout nouveau compte."
 
 [codes.DSK-04]
 titre = "Écran de connexion"
@@ -240,7 +241,7 @@ definition = "Lit tools.json (catégories, outils, paramètres)."
 
 [codes.ARS-04]
 titre = "Accent du thème"
-definition = "Couleur d'accent du thème Lab'O Noir actif, appliquée à la feuille de style."
+definition = "Couleur d'accent du thème Lab'O Noir actif, appliquée à la feuille de style. Lit aussi les réglages de verre du thème et repère si Kvantum est le style actif (kdeglobals)."
 
 [codes.ARS-05]
 titre = "Environnements"
@@ -272,7 +273,7 @@ definition = "Prépare le rapport de la vue, lance l'outil dans un terminal ou a
 
 [codes.ARS-12]
 titre = "Lancement"
-definition = "Application Qt, style, police et feuille de style à l'accent du thème."
+definition = "Application Qt, police et feuille de style à l'accent du thème. Si le thème demande des fenêtres en verre dépoli et que Kvantum est le style actif, Arsenal garde Kvantum au lieu de Fusion et rend son fond translucide."
 
 [codes.ORB-01]
 titre = "Module Orbit Pixel"
@@ -364,7 +365,7 @@ definition = "Dossier ~/.local/share/labnoir/themes, identifiant tiré du nom (s
 
 [codes.DSK-10]
 titre = "Installation du studio"
-definition = "Copie le studio dans /opt/labnoir/studio, crée la commande labnoir-studio et son entrée dans le menu des applications."
+definition = "Copie le studio dans /opt/labnoir/studio, crée la commande labnoir-studio et son entrée dans le menu des applications, ainsi que celle de la fenêtre À propos."
 
 [codes.STU-01]
 titre = "Moteur de thèmes"
@@ -392,7 +393,7 @@ definition = "Enregistre dans les thèmes personnels (sans écraser un thème fo
 
 [codes.STU-07]
 titre = "Lancement"
-definition = "Application Qt, police, feuille de style à l'accent du thème actif."
+definition = "Application Qt, police, feuille de style à l'accent du thème actif ; garde Kvantum et un fond translucide si le thème demande des fenêtres en verre dépoli. Repère si Kvantum est le style actif dans kdeglobals."
 
 [codes.BAS-02]
 titre = "Outils invités des machines virtuelles"
@@ -418,3 +419,14 @@ definition = "Génère le style Kvantum LabONoir à partir de KvArcDark (sombre)
 titre = "Chargement de l'invite"
 definition = "Ajoute une seule fois le chargement de l'invite Lab'O Noir au .bashrc du compte cible et à celui des futurs comptes (/etc/skel)."
 
+[codes.ABT-01]
+titre = "Version et accent"
+definition = "Chemins d'installation et du dépôt, version lue dans /etc/labnoir/labnoir.conf ou le fichier VERSION, accent du thème actif."
+
+[codes.ABT-02]
+titre = "Fenêtre À propos"
+definition = "Logo, nom, version, licence, lien du dépôt et crédits lus dans CREDITS.md (Markdown rendu par Qt), dont le clin d'œil à Kyagon."
+
+[codes.ABT-03]
+titre = "Lancement"
+definition = "Applique le style à l'accent du thème et ouvre la fenêtre ; Arsenal et le studio l'ouvrent par leur bouton À propos."

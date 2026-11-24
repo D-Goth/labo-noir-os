@@ -12,9 +12,11 @@ module_run() {
     put_dir "$LABNOIR_ROOT/bin" "$LABNOIR_PREFIX/bin"
     put_dir "$LABNOIR_ROOT/themes" "$LABNOIR_PREFIX/themes"
     put_dir "$LABNOIR_ROOT/desktop" "$LABNOIR_PREFIX/desktop"
+    put "$LABNOIR_ROOT/CREDITS.md" "$LABNOIR_PREFIX/CREDITS.md"
+    put "$LABNOIR_ROOT/VERSION" "$LABNOIR_PREFIX/VERSION"
     run chmod 0755 "$LABNOIR_PREFIX"/bin/*
     local tool
-    for tool in labnoir-theme labnoir-privacy labnoir-redteam; do
+    for tool in labnoir-theme labnoir-privacy labnoir-redteam labnoir-about; do
         link_bin "$tool"
     done
 

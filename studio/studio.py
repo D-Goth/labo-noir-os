@@ -9,7 +9,7 @@ from importlib.util import module_from_spec, spec_from_loader
 from io import StringIO
 from pathlib import Path
 
-from PyQt6.QtCore import QPointF, QRectF, Qt, QTimer
+from PyQt6.QtCore import QPointF, QProcess, QRectF, Qt, QTimer
 from PyQt6.QtGui import QBrush, QColor, QFont, QIcon, QLinearGradient, QPainter, QPainterPath, QPen
 from PyQt6.QtWidgets import (
     QApplication, QButtonGroup, QCheckBox, QColorDialog, QFileDialog, QFormLayout, QFrame,
@@ -309,6 +309,9 @@ class Studio(QMainWindow):
         for b in (self.btn_apply, self.btn_save, self.btn_both):
             actions.addWidget(b)
         actions.addStretch(1)
+        about = QPushButton("À propos")
+        about.clicked.connect(lambda: QProcess.startDetached("labnoir-about", []))
+        actions.addWidget(about)
         form_box.addLayout(actions)
         self.status = QLabel(objectName="muted")
         self.status.setWordWrap(True)
@@ -521,18 +524,39 @@ class Studio(QMainWindow):
 
 
 # [STU-07]
+def kvantum_active():
+    try:
+        text = (E.CONFIG_HOME / "kdeglobals").read_text(encoding="utf-8")
+    except OSError:
+        return False
+    return any(line.strip().lower() == "widgetstyle=kvantum" for line in text.splitlines())
+
+
+def glass_qss(qss, opacity):
+    if opacity is None:
+        return qss
+    alpha = round(opacity * 255)
+    for hexa in ("#0E0E10", "#141417"):
+        r, g, b = (int(hexa[i:i + 2], 16) for i in (1, 3, 5))
+        qss = qss.replace(f"background: {hexa};", f"background: rgba({r}, {g}, {b}, {alpha});", 1)
+    return qss
+
+
 def main():
     app = QApplication(sys.argv)
     app.setApplicationName("Studio Lab'O Noir")
     app.setDesktopFileName("labnoir-studio")
-    app.setStyle("Fusion")
+    try:
+        current = E.load(E.current_theme() or "labonoir")
+    except SystemExit:
+        current = None
+    accent = current.accent if current else "#FF1654"
+    opacity = current.window_opacity if current and current.glass_windows and kvantum_active() else None
+    if opacity is None:
+        app.setStyle("Fusion")
     qss = HERE / "style.qss"
     if qss.exists():
-        try:
-            accent = E.load(E.current_theme() or "labonoir").accent
-        except SystemExit:
-            accent = "#FF1654"
-        app.setStyleSheet(qss.read_text(encoding="utf-8").replace("#FF1654", accent))
+        app.setStyleSheet(glass_qss(qss.read_text(encoding="utf-8"), opacity).replace("#FF1654", accent))
     app.setFont(QFont("Inter", 10))
     w = Studio()
     w.show()

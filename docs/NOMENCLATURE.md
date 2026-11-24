@@ -1107,24 +1107,17 @@ def save_theme(self):
 
 ### [STU-07] Lancement
 
-Application Qt, police, feuille de style à l'accent du thème actif.
+Application Qt, police, feuille de style à l'accent du thème actif ; garde Kvantum et un fond translucide si le thème demande des fenêtres en verre dépoli. Repère si Kvantum est le style actif dans kdeglobals.
 
 `studio/studio.py` ligne 526
 
 ```python
-def main():
-    app = QApplication(sys.argv)
-    app.setApplicationName("Studio Lab'O Noir")
-    app.setDesktopFileName("labnoir-studio")
-    app.setStyle("Fusion")
-    qss = HERE / "style.qss"
-    if qss.exists():
-        try:
-            accent = E.load(E.current_theme() or "labonoir").accent
-        except SystemExit:
-            accent = "#FF1654"
-        app.setStyleSheet(qss.read_text(encoding="utf-8").replace("#FF1654", accent))
-…
+def kvantum_active():
+    try:
+        text = (E.CONFIG_HOME / "kdeglobals").read_text(encoding="utf-8")
+    except OSError:
+        return False
+    return any(line.strip().lower() == "widgetstyle=kvantum" for line in text.splitlines())
 ```
 
 
@@ -1372,12 +1365,12 @@ def load_tools():
 
 ### [ARS-04] Accent du thème
 
-Couleur d'accent du thème Lab'O Noir actif, appliquée à la feuille de style.
+Couleur d'accent du thème Lab'O Noir actif, appliquée à la feuille de style. Lit aussi les réglages de verre du thème et repère si Kvantum est le style actif (kdeglobals).
 
 `arsenal/arsenal.py` ligne 40
 
 ```python
-def theme_accent():
+def theme_data():
     try:
         ident = (CONFIG_HOME / "labnoir" / "theme").read_text(encoding="utf-8").strip()
     except OSError:
@@ -1387,7 +1380,7 @@ def theme_accent():
         if p.is_file():
             try:
                 with open(p, "rb") as f:
-                    return tomllib.load(f).get("accent", "#FF1654")
+                    return tomllib.load(f)
             except (OSError, tomllib.TOMLDecodeError):
 …
 ```
@@ -1396,7 +1389,7 @@ def theme_accent():
 
 Présence de Distrobox et de la Kali isolée ; pour chaque outil : système, Kali ou automatique (système si l'outil y est installé), disponibilité et raison.
 
-`arsenal/arsenal.py` ligne 57
+`arsenal/arsenal.py` ligne 86
 
 ```python
 class Runners:
@@ -1418,7 +1411,7 @@ class Runners:
 
 Arguments dans l'ordre des paramètres (case, choix, texte avec option, préfixe ou position), champs obligatoires, ~ développé ; options de rapport de la vue juste après le programme ; élévation de la seule commande (pkexec sur le système, sudo dans un terminal ou dans la Kali) quand l'outil ou une option choisie l'exige ; passage par la Kali. Aucun shell : une saisie reste un seul argument.
 
-`arsenal/arsenal.py` ligne 90
+`arsenal/arsenal.py` ligne 119
 
 ```python
 def build_args(tool, values):
@@ -1440,7 +1433,7 @@ def build_args(tool, values):
 
 Konsole (fenêtre gardée ouverte) ou terminal par défaut pour les outils interactifs ou qui demandent sudo.
 
-`arsenal/arsenal.py` ligne 155
+`arsenal/arsenal.py` ligne 184
 
 ```python
 def terminal_command(cmd):
@@ -1455,7 +1448,7 @@ def terminal_command(cmd):
 
 Champs générés depuis les paramètres de l'outil, valeurs par défaut, mise à jour de l'aperçu à chaque saisie.
 
-`arsenal/arsenal.py` ligne 164
+`arsenal/arsenal.py` ligne 193
 
 ```python
 class ParamForm(QWidget):
@@ -1477,7 +1470,7 @@ class ParamForm(QWidget):
 
 Recherche, liste des outils (grisés s'ils sont indisponibles), état de la Kali, fiche de l'outil, aperçu de la commande, boutons et sortie.
 
-`arsenal/arsenal.py` ligne 212
+`arsenal/arsenal.py` ligne 241
 
 ```python
 class Arsenal(QMainWindow):
@@ -1499,7 +1492,7 @@ class Arsenal(QMainWindow):
 
 Affiche la fiche, l'environnement, l'avertissement éventuel et le formulaire ; aperçu de la commande exacte.
 
-`arsenal/arsenal.py` ligne 380
+`arsenal/arsenal.py` ligne 409
 
 ```python
 def select(self, item, _prev=None):
@@ -1521,7 +1514,7 @@ def select(self, item, _prev=None):
 
 Prépare le rapport de la vue, lance l'outil dans un terminal ou avec QProcess (sortie en direct gardée pour la vue, code de retour). Une vue en direct est remise à zéro, affichée tout de suite et reçoit la sortie au fil de l'eau. Arrêt propre puis forcé après 3 s ; pour une commande administrateur, l'arrêt passe lui aussi par pkexec.
 
-`arsenal/arsenal.py` ligne 445
+`arsenal/arsenal.py` ligne 474
 
 ```python
 def run(self):
@@ -1541,23 +1534,23 @@ def run(self):
 
 ### [ARS-12] Lancement
 
-Application Qt, style, police et feuille de style à l'accent du thème.
+Application Qt, police et feuille de style à l'accent du thème. Si le thème demande des fenêtres en verre dépoli et que Kvantum est le style actif, Arsenal garde Kvantum au lieu de Fusion et rend son fond translucide.
 
-`arsenal/arsenal.py` ligne 548
+`arsenal/arsenal.py` ligne 577
 
 ```python
 def main():
     app = QApplication(sys.argv)
     app.setApplicationName("Arsenal")
     app.setDesktopFileName("labnoir-arsenal")
-    app.setStyle("Fusion")
+    opacity = glass_opacity()
+    if opacity is None:
+        app.setStyle("Fusion")
     if STYLE.exists():
         vues.ACCENT = theme_accent()
-        app.setStyleSheet(STYLE.read_text(encoding="utf-8").replace("#FF1654", vues.ACCENT))
+        app.setStyleSheet(glass_qss(STYLE.read_text(encoding="utf-8"), opacity).replace("#FF1654", vues.ACCENT))
     app.setFont(QFont("Inter", 10))
     w = Arsenal()
-    w.show()
-    return app.exec()
 …
 ```
 
@@ -1565,7 +1558,7 @@ def main():
 
 Crée la vue graphique de l'outil choisi à côté de l'onglet Sortie, ou la retire s'il n'en a pas.
 
-`arsenal/arsenal.py` ligne 402
+`arsenal/arsenal.py` ligne 431
 
 ```python
 def set_view(self, tool):
@@ -1584,7 +1577,7 @@ def set_view(self, tool):
 
 À la fin de l'exécution, lit le rapport ou la sortie et affiche la vue ; signale un rapport absent ou illisible.
 
-`arsenal/arsenal.py` ligne 508
+`arsenal/arsenal.py` ligne 537
 
 ```python
 def show_view(self):
@@ -1606,7 +1599,7 @@ def show_view(self):
 
 Cochée et verrouillée quand l'outil ou l'option choisie exige root (scan SYN ou UDP, détection du système, rkhunter) ; sinon libre, pour un audit Lynis complet par exemple. Seule la commande est élevée, jamais Arsenal lui-même.
 
-`arsenal/arsenal.py` ligne 414
+`arsenal/arsenal.py` ligne 443
 
 ```python
 def sync_admin(self):
@@ -1975,13 +1968,18 @@ STYLE = """
 
 Applique le style à l'accent du thème et ouvre la fenêtre ; Arsenal et le studio l'ouvrent par leur bouton À propos.
 
-`bin/labnoir-about` ligne 96
+`bin/labnoir-about` ligne 100
 
 ```python
 def main():
     app = QApplication(sys.argv)
     app.setApplicationName("labnoir-about")
     app.setDesktopFileName("labnoir-about")
-    app.setStyleSheet(STYLE.replace("ACCENT", accent()))
+    color = accent()
+    pal = app.palette()
+    for role in (QPalette.ColorRole.Link, QPalette.ColorRole.LinkVisited):
+        pal.setColor(role, QColor(color))
+    app.setPalette(pal)
+    app.setStyleSheet(STYLE.replace("ACCENT", color))
     About().exec()
 ```

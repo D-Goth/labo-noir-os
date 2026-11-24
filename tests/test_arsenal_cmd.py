@@ -38,4 +38,8 @@ assert shark[shark.index("-c") + 1] == "500" and shark[shark.index("-i") + 1] ==
 import vues
 fields = [shark[i + 1] for i, a in enumerate(shark) if a == "-e"]
 assert fields == vues.TSHARK_FIELDS, fields
+qss = "QMainWindow { background: #0E0E10; }\nQFrame#side { background: #141417; }\nQTextEdit { background: #0B0B0D; }"
+assert A.glass_qss(qss, None) == qss
+g = A.glass_qss(qss, 0.8)
+assert "rgba(14, 14, 16, 204)" in g and "rgba(20, 20, 23, 204)" in g and "#0B0B0D" in g
 print("commandes ok")

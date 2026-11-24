@@ -241,7 +241,7 @@ definition = "Lit tools.json (catégories, outils, paramètres)."
 
 [codes.ARS-04]
 titre = "Accent du thème"
-definition = "Couleur d'accent du thème Lab'O Noir actif, appliquée à la feuille de style."
+definition = "Couleur d'accent du thème Lab'O Noir actif, appliquée à la feuille de style. Lit aussi les réglages de verre du thème et repère si Kvantum est le style actif (kdeglobals)."
 
 [codes.ARS-05]
 titre = "Environnements"
@@ -273,7 +273,7 @@ definition = "Prépare le rapport de la vue, lance l'outil dans un terminal ou a
 
 [codes.ARS-12]
 titre = "Lancement"
-definition = "Application Qt, style, police et feuille de style à l'accent du thème."
+definition = "Application Qt, police et feuille de style à l'accent du thème. Si le thème demande des fenêtres en verre dépoli et que Kvantum est le style actif, Arsenal garde Kvantum au lieu de Fusion et rend son fond translucide."
 
 [codes.ORB-01]
 titre = "Module Orbit Pixel"
@@ -393,7 +393,7 @@ definition = "Enregistre dans les thèmes personnels (sans écraser un thème fo
 
 [codes.STU-07]
 titre = "Lancement"
-definition = "Application Qt, police, feuille de style à l'accent du thème actif."
+definition = "Application Qt, police, feuille de style à l'accent du thème actif ; garde Kvantum et un fond translucide si le thème demande des fenêtres en verre dépoli. Repère si Kvantum est le style actif dans kdeglobals."
 
 [codes.BAS-02]
 titre = "Outils invités des machines virtuelles"

@@ -26,7 +26,7 @@ ne pas le modifier à la main.
 | [`BAS`](#bas) | Module base | 3 |
 | [`PRV`](#prv) | Confidentialité : module et outil labnoir-privacy | 7 |
 | [`DSK`](#dsk) | Bureau : module, look-and-feel Plasma, première connexion | 11 |
-| [`THM`](#thm) | Gestionnaire de thèmes labnoir-theme | 13 |
+| [`THM`](#thm) | Gestionnaire de thèmes labnoir-theme | 14 |
 | [`STU`](#stu) | Studio Lab'O Noir, éditeur graphique de thèmes (studio/studio.py) | 7 |
 | [`DEV`](#dev) | Module développement | 1 |
 | [`DEF`](#def) | Module défense | 1 |
@@ -36,7 +36,7 @@ ne pas le modifier à la main.
 | [`ARS`](#ars) | Arsenal, lanceur graphique des outils | 15 |
 | [`ORB`](#orb) | Module Orbit Pixel | 1 |
 | [`HRD`](#hrd) | Module durcissement | 5 |
-| [`VUE`](#vue) | Vues graphiques d'Arsenal (arsenal/vues.py) | 9 |
+| [`VUE`](#vue) | Vues graphiques d'Arsenal (arsenal/vues.py) | 10 |
 | [`OUT`](#out) | Outils du dépôt (vérifications, CI) | 1 |
 
 ## INS
@@ -792,7 +792,7 @@ BUTTONS = {
 
 ### [THM-03] Thème
 
-Nom, mode sombre ou clair, accent, flou et bruit du verre dépoli, opacité du terminal, boutons, fond d'écran, transparence d'Orbit Pixel.
+Nom, mode sombre ou clair, accent, flou et bruit du verre dépoli, opacité du terminal, fenêtres en verre dépoli et leur opacité, boutons, fond d'écran, transparence d'Orbit Pixel.
 
 `bin/labnoir-theme` ligne 33
 
@@ -804,7 +804,7 @@ Nom, mode sombre ou clair, accent, flou et bruit du verre dépoli, opacité du t
 
 Lit le fichier TOML, vérifie l'accent (#RRGGBB), le mode et les boutons, borne les valeurs.
 
-`bin/labnoir-theme` ligne 77
+`bin/labnoir-theme` ligne 79
 
 ```python
 def load(ident):
@@ -826,7 +826,7 @@ def load(ident):
 
 Conversion hexadécimale, mélange de deux couleurs, format KDE et luminance.
 
-`bin/labnoir-theme` ligne 108
+`bin/labnoir-theme` ligne 112
 
 ```python
 def rgb(hexa):
@@ -838,7 +838,7 @@ def rgb(hexa):
 
 Palettes sombre et claire, et génération du fichier .colors avec l'accent (sélection, liens, focus) et un texte de sélection lisible.
 
-`bin/labnoir-theme` ligne 132
+`bin/labnoir-theme` ligne 136
 
 ```python
 PALETTES = {
@@ -860,7 +860,7 @@ PALETTES = {
 
 Couleurs Konsole assorties, accent en rouge ANSI, opacité et flou.
 
-`bin/labnoir-theme` ligne 206
+`bin/labnoir-theme` ligne 210
 
 ```python
 def render_konsole(t):
@@ -882,7 +882,7 @@ def render_konsole(t):
 
 Recherche des outils KDE, lecture et écriture de réglages, écriture atomique de fichiers, compte rendu.
 
-`bin/labnoir-theme` ligne 237
+`bin/labnoir-theme` ligne 241
 
 ```python
 def tool(*names):
@@ -894,9 +894,9 @@ def tool(*names):
 
 ### [THM-09] Application
 
-Couleurs (en alternant deux noms pour forcer Plasma à recharger), icônes, terminal, flou et boutons de KWin, accent et transparence d'Orbit Pixel, invite du terminal, cool-retro-term s'il est installé, mémorisation du thème. Le fond d'écran n'est remplacé qu'avec --fond (première connexion), pour garder celui choisi par l'utilisateur.
+Couleurs (en alternant deux noms pour forcer Plasma à recharger), icônes, terminal, flou et boutons de KWin, accent et transparence d'Orbit Pixel, invite du terminal, fenêtres en verre dépoli (Kvantum), cool-retro-term s'il est installé, mémorisation du thème. Le fond d'écran n'est remplacé qu'avec --fond (première connexion), pour garder celui choisi par l'utilisateur.
 
-`bin/labnoir-theme` ligne 272
+`bin/labnoir-theme` ligne 276
 
 ```python
 def apply(t, with_wallpaper=False):
@@ -918,7 +918,7 @@ def apply(t, with_wallpaper=False):
 
 list, current, apply (depuis la session) et render (pour l'installateur).
 
-`bin/labnoir-theme` ligne 425
+`bin/labnoir-theme` ligne 528
 
 ```python
 def main(argv=None):
@@ -940,7 +940,7 @@ def main(argv=None):
 
 Dossier ~/.local/share/labnoir/themes, identifiant tiré du nom (sans accents ni espaces), écriture d'un thème en TOML et repérage des thèmes personnels (modifiables et supprimables).
 
-`bin/labnoir-theme` ligne 372
+`bin/labnoir-theme` ligne 473
 
 ```python
 USER_THEMES = DATA_HOME / "labnoir" / "themes"
@@ -950,7 +950,7 @@ USER_THEMES = DATA_HOME / "labnoir" / "themes"
 
 Génère ~/.config/labnoir/prompt.sh : utilisateur à l'accent, machine atténuée, dossier, flèche à l'accent, en couleurs 24 bits ; chargé par les shells interactifs.
 
-`bin/labnoir-theme` ligne 323
+`bin/labnoir-theme` ligne 330
 
 ```python
 def ansi(hexa):
@@ -961,10 +961,20 @@ def ansi(hexa):
 
 Met le texte à l'accent et le fond du thème dans le profil courant de cool-retro-term (sa base de réglages SQLite), seulement s'il est fermé et a déjà été lancé une fois.
 
-`bin/labnoir-theme` ligne 338
+`bin/labnoir-theme` ligne 345
 
 ```python
 CRT_DB = DATA_HOME / "cool-retro-term" / "cool-retro-term" / "QML" / "OfflineStorage" / "Databases"
+```
+
+### [THM-14] Fenêtres en verre dépoli
+
+Génère le style Kvantum LabONoir à partir de KvArcDark (sombre) ou KvArc (clair) : les bleus d'Arc deviennent l'accent, les gris sombres prennent la teinte du thème, fenêtres et menus translucides avec flou. Sans l'option, revient au style Breeze. Les applications ouvertes doivent être relancées.
+
+`bin/labnoir-theme` ligne 379
+
+```python
+KVANTUM_SYSTEM = Path("/usr/share/Kvantum")
 ```
 
 
@@ -1008,7 +1018,7 @@ class Preview(QWidget):
 
 Liste des thèmes, formulaire (nom, mode, accent, flou, grain, opacité du terminal, fond d'Orbit Pixel, boutons, fond d'écran), aperçu en direct sur le bureau, boutons Appliquer et Enregistrer.
 
-`studio/studio.py` ligne 166
+`studio/studio.py` ligne 169
 
 ```python
 class Studio(QMainWindow):
@@ -1030,7 +1040,7 @@ class Studio(QMainWindow):
 
 Liste tous les thèmes (le thème actif marqué à sa couleur), remplit le formulaire et l'aperçu ; seuls les thèmes personnels peuvent être supprimés.
 
-`studio/studio.py` ligne 333
+`studio/studio.py` ligne 341
 
 ```python
 def refresh_list(self, select=None):
@@ -1052,7 +1062,7 @@ def refresh_list(self, select=None):
 
 Rassemble les valeurs du formulaire en thème, met à jour l'aperçu à chaque changement et, si l'aperçu en direct est coché, l'applique au bureau après 0,7 s sans modification ; accent par pastille, pipette ou code hexadécimal ; choix du fond d'écran.
 
-`studio/studio.py` ligne 380
+`studio/studio.py` ligne 392
 
 ```python
 def collect(self):
@@ -1074,7 +1084,7 @@ def collect(self):
 
 Enregistre dans les thèmes personnels (sans écraser un thème fourni), applique via le moteur (fond d'écran seulement si demandé), duplique, supprime, importe un thème vérifié et exporte un thème sans son fond d'écran.
 
-`studio/studio.py` ligne 431
+`studio/studio.py` ligne 445
 
 ```python
 def save_theme(self):
@@ -1096,7 +1106,7 @@ def save_theme(self):
 
 Application Qt, police, feuille de style à l'accent du thème actif.
 
-`studio/studio.py` ligne 509
+`studio/studio.py` ligne 523
 
 ```python
 def main():
@@ -1486,7 +1496,7 @@ class Arsenal(QMainWindow):
 
 Affiche la fiche, l'environnement, l'avertissement éventuel et le formulaire ; aperçu de la commande exacte.
 
-`arsenal/arsenal.py` ligne 374
+`arsenal/arsenal.py` ligne 375
 
 ```python
 def select(self, item, _prev=None):
@@ -1506,9 +1516,9 @@ def select(self, item, _prev=None):
 
 ### [ARS-11] Exécution
 
-Prépare le rapport de la vue, lance l'outil dans un terminal ou avec QProcess (sortie en direct gardée pour la vue, code de retour). Arrêt propre puis forcé après 3 s ; pour une commande administrateur, l'arrêt passe lui aussi par pkexec.
+Prépare le rapport de la vue, lance l'outil dans un terminal ou avec QProcess (sortie en direct gardée pour la vue, code de retour). Une vue en direct est remise à zéro, affichée tout de suite et reçoit la sortie au fil de l'eau. Arrêt propre puis forcé après 3 s ; pour une commande administrateur, l'arrêt passe lui aussi par pkexec.
 
-`arsenal/arsenal.py` ligne 439
+`arsenal/arsenal.py` ligne 440
 
 ```python
 def run(self):
@@ -1530,7 +1540,7 @@ def run(self):
 
 Application Qt, style, police et feuille de style à l'accent du thème.
 
-`arsenal/arsenal.py` ligne 536
+`arsenal/arsenal.py` ligne 543
 
 ```python
 def main():
@@ -1539,18 +1549,20 @@ def main():
     app.setDesktopFileName("labnoir-arsenal")
     app.setStyle("Fusion")
     if STYLE.exists():
-        app.setStyleSheet(STYLE.read_text(encoding="utf-8").replace("#FF1654", theme_accent()))
+        vues.ACCENT = theme_accent()
+        app.setStyleSheet(STYLE.read_text(encoding="utf-8").replace("#FF1654", vues.ACCENT))
     app.setFont(QFont("Inter", 10))
     w = Arsenal()
     w.show()
     return app.exec()
+…
 ```
 
 ### [ARS-13] Onglet Vue
 
 Crée la vue graphique de l'outil choisi à côté de l'onglet Sortie, ou la retire s'il n'en a pas.
 
-`arsenal/arsenal.py` ligne 396
+`arsenal/arsenal.py` ligne 397
 
 ```python
 def set_view(self, tool):
@@ -1569,7 +1581,7 @@ def set_view(self, tool):
 
 À la fin de l'exécution, lit le rapport ou la sortie et affiche la vue ; signale un rapport absent ou illisible.
 
-`arsenal/arsenal.py` ligne 496
+`arsenal/arsenal.py` ligne 503
 
 ```python
 def show_view(self):
@@ -1591,7 +1603,7 @@ def show_view(self):
 
 Cochée et verrouillée quand l'outil ou l'option choisie exige root (scan SYN ou UDP, détection du système, rkhunter) ; sinon libre, pour un audit Lynis complet par exemple. Seule la commande est élevée, jamais Arsenal lui-même.
 
-`arsenal/arsenal.py` ligne 408
+`arsenal/arsenal.py` ligne 409
 
 ```python
 def sync_admin(self):
@@ -1739,7 +1751,7 @@ Vues graphiques d'Arsenal (arsenal/vues.py)
 
 Services sensibles s'ils sont exposés (Telnet, FTP, SMB, RDP, VNC, bases de données, Redis…), services attendus (SSH, HTTPS, DNS…), couleurs, dossier ~/.cache/labnoir/arsenal des rapports.
 
-`arsenal/vues.py` ligne 17
+`arsenal/vues.py` ligne 18
 
 ```python
 RISKY = {
@@ -1753,7 +1765,7 @@ RISKY = {
 
 Port (numéro, protocole, état, service, version) et machine (adresse, nom, système) avec leur niveau : sensible, à vérifier, attendu, fermé.
 
-`arsenal/vues.py` ligne 36
+`arsenal/vues.py` ligne 38
 
 ```python
 @dataclass
@@ -1763,7 +1775,7 @@ Port (numéro, protocole, état, service, version) et machine (adresse, nom, sys
 
 Lit le XML de Nmap (-oX) : machines actives, noms, système détecté, ports et versions.
 
-`arsenal/vues.py` ligne 74
+`arsenal/vues.py` ligne 76
 
 ```python
 def parse_nmap(path):
@@ -1785,7 +1797,7 @@ def parse_nmap(path):
 
 Lit le rapport de Lynis : indice de durcissement, avertissements et suggestions avec leur détail.
 
-`arsenal/vues.py` ligne 108
+`arsenal/vues.py` ligne 110
 
 ```python
 def parse_lynis(path):
@@ -1807,7 +1819,7 @@ def parse_lynis(path):
 
 Détections de ClamAV (« chemin: signature FOUND ») et de YARA (« règle chemin »).
 
-`arsenal/vues.py` ligne 128
+`arsenal/vues.py` ligne 130
 
 ```python
 FOUND = re.compile(r"^(?P<path>.+): (?P<sig>.+) FOUND$")
@@ -1817,7 +1829,7 @@ FOUND = re.compile(r"^(?P<path>.+): (?P<sig>.+) FOUND$")
 
 Une bulle par machine colorée selon son port le plus sensible, ses ports ouverts autour d'elle, infobulles détaillées, carte ajustée à la fenêtre, et tableau de tous les ports.
 
-`arsenal/vues.py` ligne 145
+`arsenal/vues.py` ligne 147
 
 ```python
 class NmapView(QWidget):
@@ -1839,7 +1851,7 @@ class NmapView(QWidget):
 
 Jauge de l'indice de durcissement (rouge sous 60, orange sous 80, vert au-delà), avertissements et suggestions.
 
-`arsenal/vues.py` ligne 256
+`arsenal/vues.py` ligne 258
 
 ```python
 class Gauge(QWidget):
@@ -1861,7 +1873,7 @@ class Gauge(QWidget):
 
 Fichiers détectés par ClamAV ou YARA avec la signature ou la règle, et ouverture du dossier du fichier.
 
-`arsenal/vues.py` ligne 322
+`arsenal/vues.py` ligne 324
 
 ```python
 class FindingsView(QWidget):
@@ -1881,13 +1893,27 @@ class FindingsView(QWidget):
 
 ### [VUE-09] Choix et affichage d'une vue
 
-Crée la vue d'un type (nmap, lynis, clamav, yara) et lui passe le rapport ou la sortie de l'outil.
+Crée la vue d'un type (nmap, lynis, clamav, yara, tshark) et lui passe le rapport ou la sortie de l'outil ; pour TShark, termine la capture et signale l'absence de paquets.
 
-`arsenal/vues.py` ligne 359
+`arsenal/vues.py` ligne 618
 
 ```python
 def make_view(kind):
-    return {"nmap": NmapView, "lynis": LynisView, "clamav": FindingsView, "yara": FindingsView}[kind]()
+    return {"nmap": NmapView, "lynis": LynisView, "clamav": FindingsView, "yara": FindingsView,
+            "tshark": TsharkView}[kind]()
+```
+
+### [VUE-10] TShark en direct
+
+Champs demandés à TShark, ports sensibles et en clair, agrégation de la capture (paquets, volume, débit par seconde sur 60 s, protocoles, conversations dans les deux sens), courbe de débit, barres des protocoles et tableau des conversations rafraîchis deux fois par seconde.
+
+`arsenal/vues.py` ligne 361
+
+```python
+TSHARK_FIELDS = [
+    "frame.time_epoch", "eth.src", "eth.dst", "ip.src", "ip.dst", "ipv6.src", "ipv6.dst",
+    "_ws.col.protocol", "frame.len", "tcp.srcport", "tcp.dstport", "udp.srcport", "udp.dstport",
+]
 ```
 
 

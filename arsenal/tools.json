@@ -7,7 +7,7 @@
         {
           "id": "tshark",
           "name": "TShark",
-          "description": "Capture et lecture du trafic réseau (Wireshark en ligne de commande).",
+          "description": "Capture du trafic réseau, vue en direct : débit, protocoles, qui parle à qui, services en clair ou sensibles. Coche « administrateur » si ton compte n'est pas dans le groupe wireshark.",
           "program": "tshark",
           "runner": "host",
           "params": [
@@ -23,7 +23,8 @@
               "id": "count",
               "label": "Nombre de paquets",
               "flag": "-c",
-              "default": "100"
+              "default": "500",
+              "placeholder": "vide = jusqu'à l'arrêt"
             },
             {
               "type": "text",
@@ -32,7 +33,47 @@
               "flag": "-f",
               "placeholder": "port 443"
             }
-          ]
+          ],
+          "vue": {
+            "type": "tshark",
+            "direct": true,
+            "args": [
+              "-l",
+              "-n",
+              "-T",
+              "fields",
+              "-E",
+              "separator=|",
+              "-E",
+              "occurrence=f",
+              "-e",
+              "frame.time_epoch",
+              "-e",
+              "eth.src",
+              "-e",
+              "eth.dst",
+              "-e",
+              "ip.src",
+              "-e",
+              "ip.dst",
+              "-e",
+              "ipv6.src",
+              "-e",
+              "ipv6.dst",
+              "-e",
+              "_ws.col.protocol",
+              "-e",
+              "frame.len",
+              "-e",
+              "tcp.srcport",
+              "-e",
+              "tcp.dstport",
+              "-e",
+              "udp.srcport",
+              "-e",
+              "udp.dstport"
+            ]
+          }
         },
         {
           "id": "yara",

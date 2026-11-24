@@ -21,6 +21,7 @@ plasma-discover
 plasma-discover-backend-flatpak
 papirus-icon-theme
 qt6-style-kvantum
+qt-style-kvantum-themes
 libkf6config-bin
 qdbus-qt6
 python3-pyqt6

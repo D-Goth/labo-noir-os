@@ -40,6 +40,8 @@ class Theme:
     blur: int
     noise: int
     terminal_opacity: float
+    glass_windows: bool
+    window_opacity: float
     buttons: str
     wallpaper: Path | None
     orbit_alpha: int
@@ -99,6 +101,8 @@ def load(ident):
         blur=max(1, min(15, int(glass.get("flou", 10)))),
         noise=max(0, min(14, int(glass.get("bruit", 2)))),
         terminal_opacity=max(0.5, min(1.0, float(glass.get("opacite_terminal", 0.86)))),
+        glass_windows=bool(glass.get("fenetres", False)),
+        window_opacity=max(0.6, min(1.0, float(glass.get("opacite_fenetres", 0.85)))),
         buttons=buttons,
         wallpaper=find_wallpaper(data.get("fond", {}).get("image", "")),
         orbit_alpha=max(0, min(255, int(data.get("orbit", {}).get("transparence", 190)))),
@@ -291,6 +295,9 @@ def apply(t, with_wallpaper=False):
     write(DATA_HOME / "konsole" / "LabONoir.colorscheme", render_konsole(t))
     write(CONFIG_HOME / "labnoir" / "prompt.sh", render_prompt(t))
     report(True, "terminal", f"opacité {round(t.terminal_opacity * 100)} %, invite à l'accent (nouveaux terminaux)")
+    ok, detail = apply_kvantum(t)
+    report(ok, "fenêtres en verre dépoli", detail)
+
     if tool("cool-retro-term"):
         ok, detail = theme_cool_retro_term(t)
         report(ok, "cool-retro-term", detail)
@@ -369,6 +376,100 @@ def theme_cool_retro_term(t):
     return False, "lance-le une première fois puis réapplique le thème"
 
 
+# [THM-14]
+KVANTUM_SYSTEM = Path("/usr/share/Kvantum")
+KVANTUM_USER = CONFIG_HOME / "Kvantum"
+KVANTUM_NAME = "LabONoir"
+KVANTUM_BASES = {"sombre": ("KvArcDark", "#383C4A"), "clair": ("KvArc", "#F5F6F7")}
+KVANTUM_ACCENTS = {"#5294E2": 0.0, "#58ACFF": 0.25, "#4693E6": -0.1, "#4A90D9": -0.05}
+HEX_ANY = re.compile(r"#[0-9a-fA-F]{6}\b")
+
+
+def recolor(text, t, ref_window):
+    p = PALETTES[t.mode]
+    l_ref = luminance(ref_window)
+    l_target = luminance(p["window"])
+
+    def shade(m):
+        col = m.group(0).upper()
+        if col in KVANTUM_ACCENTS:
+            k = KVANTUM_ACCENTS[col]
+            return mix(t.accent, "#FFFFFF" if k > 0 else "#000000", abs(k))
+        r, g, b = rgb(col)
+        if max(r, g, b) - min(r, g, b) > 60:
+            return col
+        lum = luminance(col)
+        if t.mode == "sombre" and lum < 0.4:
+            scale = l_target / l_ref if l_ref else 1
+            grey = round(255 * min(1.0, (lum * scale) ** (1 / 2.2)))
+            return f"#{grey:02X}{grey:02X}{min(255, grey + 2):02X}"
+        return col
+
+    return HEX_ANY.sub(shade, text)
+
+
+def render_kvantum(t):
+    base, ref = KVANTUM_BASES[t.mode]
+    src = KVANTUM_SYSTEM / base
+    if not (src / f"{base}.svg").is_file():
+        return None
+    svg = recolor((src / f"{base}.svg").read_text(encoding="utf-8"), t, ref)
+    cfg = (src / f"{base}.kvconfig").read_text(encoding="utf-8")
+    p = PALETTES[t.mode]
+    sel_fg = "#000000" if luminance(t.accent) > 0.55 else "#FFFFFF"
+    general = {
+        "translucent_windows": "true",
+        "blurring": "true",
+        "popup_blurring": "true",
+        "composite": "true",
+        "reduce_window_opacity": str(round((1 - t.window_opacity) * 100)),
+        "reduce_menu_opacity": str(round((1 - t.window_opacity) * 60)),
+        "comment": f"Lab'O Noir : {t.name}",
+        "author": "Lab'O Noir (d'après " + base + ")",
+    }
+    colors = {
+        "window.color": p["window"], "base.color": p["view"], "alt.base.color": p["alt"],
+        "button.color": p["button"], "highlight.color": t.accent, "inactive.highlight.color": t.accent,
+        "text.color": p["fg"], "window.text.color": p["fg"], "button.text.color": p["fg"],
+        "disabled.text.color": p["inactive"], "highlight.text.color": sel_fg, "link.color": t.accent,
+        "link.visited.color": mix(t.accent, p["fg"], 0.45), "progress.indicator.text.color": sel_fg,
+    }
+    out, section = [], ""
+    seen = set()
+    for line in cfg.splitlines():
+        if line.startswith("["):
+            if section == "%General":
+                out += [f"{k}={v}" for k, v in general.items() if k not in seen]
+            section = line.strip("[]")
+            out.append(line)
+            continue
+        key = line.split("=", 1)[0].strip()
+        if section == "%General" and key in general:
+            out.append(f"{key}={general[key]}")
+            seen.add(key)
+        elif section == "GeneralColors" and key in colors:
+            out.append(f"{key}={colors[key]}")
+        else:
+            out.append(line)
+    return out, svg
+
+
+def apply_kvantum(t):
+    if not t.glass_windows:
+        ok = kwrite("kdeglobals", "KDE", "widgetStyle", "Breeze")
+        return ok, "désactivé (style Breeze)"
+    rendered = render_kvantum(t)
+    if rendered is None:
+        return False, "thèmes Kvantum absents : sudo apt install qt-style-kvantum-themes"
+    cfg, svg = rendered
+    folder = KVANTUM_USER / KVANTUM_NAME
+    write(folder / f"{KVANTUM_NAME}.kvconfig", "\n".join(cfg) + "\n")
+    write(folder / f"{KVANTUM_NAME}.svg", svg)
+    write(KVANTUM_USER / "kvantum.kvconfig", f"[General]\ntheme={KVANTUM_NAME}\n")
+    ok = kwrite("kdeglobals", "KDE", "widgetStyle", "kvantum")
+    return ok, f"opacité {round(t.window_opacity * 100)} % (applications à relancer)"
+
+
 # [THM-11]
 USER_THEMES = DATA_HOME / "labnoir" / "themes"
 
@@ -392,6 +493,8 @@ def dump(t):
         f"flou = {t.blur}",
         f"bruit = {t.noise}",
         f"opacite_terminal = {t.terminal_opacity:.2f}",
+        f"fenetres = {'true' if t.glass_windows else 'false'}",
+        f"opacite_fenetres = {t.window_opacity:.2f}",
         "",
         "[fenetres]",
         f"boutons = {q(t.buttons)}",

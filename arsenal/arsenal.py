@@ -314,6 +314,7 @@ class Arsenal(QMainWindow):
         self.view = None
         self.buffer = []
         self.report = None
+        self.live = False
         ml.addWidget(self.tabs, 1)
         self.status = QLabel(objectName="muted")
         ml.addWidget(self.status)
@@ -473,6 +474,10 @@ class Arsenal(QMainWindow):
         self.proc.finished.connect(self.finished)
         self.proc.errorOccurred.connect(self.failed)
         self.proc.start(cmd[0], cmd[1:])
+        self.live = bool(vue.get("direct")) and self.view is not None
+        if self.live:
+            self.view.reset()
+            self.tabs.setCurrentIndex(1)
         self.run_btn.setEnabled(False)
         self.stop_btn.setEnabled(True)
         self.status.setText("En cours… (mot de passe demandé par Plasma)" if self.running_admin else "En cours…")
@@ -480,6 +485,8 @@ class Arsenal(QMainWindow):
     def read_output(self):
         data = bytes(self.proc.readAllStandardOutput()).decode("utf-8", "replace")
         self.buffer.append(data)
+        if self.live and self.view is not None and self.running_tool is self.tool:
+            self.view.feed(data)
         self.output.moveCursor(QTextCursor.MoveOperation.End)
         self.output.insertPlainText(data)
         self.output.moveCursor(QTextCursor.MoveOperation.End)
@@ -540,7 +547,8 @@ def main():
     app.setDesktopFileName("labnoir-arsenal")
     app.setStyle("Fusion")
     if STYLE.exists():
-        app.setStyleSheet(STYLE.read_text(encoding="utf-8").replace("#FF1654", theme_accent()))
+        vues.ACCENT = theme_accent()
+        app.setStyleSheet(STYLE.read_text(encoding="utf-8").replace("#FF1654", vues.ACCENT))
     app.setFont(QFont("Inter", 10))
     w = Arsenal()
     w.show()

@@ -6,6 +6,8 @@ accent = "#FF1654"
 flou = 10
 bruit = 2
 opacite_terminal = 0.86
+fenetres = true
+opacite_fenetres = 0.85
 
 [fenetres]
 boutons = "classique"

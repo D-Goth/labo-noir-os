@@ -27,6 +27,9 @@ qui cache sous le capot tout ce qu'il faut pour développer, surveiller, auditer
   <img src="docs/img/arsenal-nmap.png" width="49%" alt="Arsenal : carte réseau Nmap">
   <img src="docs/img/studio.png" width="49%" alt="Studio Lab'O Noir">
 </p>
+<p align="center">
+  <img src="docs/img/arsenal-tshark.png" width="70%" alt="Arsenal : TShark en direct">
+</p>
 
 ## Sommaire
 
@@ -45,11 +48,11 @@ qui cache sous le capot tout ce qu'il faut pour développer, surveiller, auditer
 
 Plasma 6 dans l'esprit d'elementary OS : une barre fine en haut (menu, menu de l'application active,
 horloge centrée, notifications), un dock flottant centré qui s'efface devant les fenêtres, le flou du
-verre dépoli sur les panneaux, les menus et le terminal. Les fenêtres gardent leurs boutons réduire,
-agrandir et fermer en haut à droite.
+verre dépoli sur les panneaux, les menus, le terminal et les fenêtres elles-mêmes (style Kvantum recoloré
+aux couleurs du thème). Les fenêtres gardent leurs boutons réduire, agrandir et fermer en haut à droite.
 
 Le **Studio Lab'O Noir** règle tout sans toucher un fichier : couleur d'accent, mode sombre ou clair,
-force du flou, opacité du terminal, boutons des fenêtres, fond d'écran, avec un aperçu en direct.
+force du flou, opacité du terminal, fenêtres en verre dépoli et leur opacité, boutons des fenêtres, fond d'écran, avec un aperçu en direct.
 Trois thèmes sont fournis (`labonoir`, `nuit-bleue`, `givre`), les tiens s'enregistrent et se partagent.
 
 Le thème va jusqu'au terminal : couleurs et transparence de Konsole, invite à l'accent, et
@@ -63,7 +66,7 @@ Un lanceur graphique pour les outils habituellement en ligne de commande :
 
 - formulaire par outil, aperçu de la commande exacte, sortie en direct, bouton Arrêter ;
 - chaque outil tourne **sur le système** ou **dans la Kali isolée**, au choix ou automatiquement ;
-- **vues graphiques** des résultats : carte réseau Nmap (machines et ports colorés selon leur sensibilité), jauge et recommandations de Lynis, détections ClamAV et YARA ;
+- **vues graphiques** des résultats : carte réseau Nmap (machines et ports colorés selon leur sensibilité), jauge et recommandations de Lynis, détections ClamAV et YARA, et **TShark en direct** (débit, protocoles, qui parle à qui, services en clair ou sensibles signalés) ;
 - case **Administrateur** : seule la commande passe en root, Plasma demande ton mot de passe ;
 - aucune saisie ne peut injecter de commande : chaque champ reste un argument.
 
@@ -198,7 +201,7 @@ Clic droit sur le dock, « Afficher la configuration du panneau » : largeur « 
 
 - [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) : organisation du dépôt et choix techniques
 - [docs/NOMENCLATURE.md](docs/NOMENCLATURE.md) : chaque code de référence du code, avec sa définition et un extrait
-- [ROADMAP.md](ROADMAP.md) : la suite (ISO installable, client bitchat, vues TShark…)
+- [ROADMAP.md](ROADMAP.md) : la suite (ISO installable, client bitchat, VM prêtes…)
 
 Le code ne contient pas de commentaires explicatifs mais des codes de référence (`# [INS-04]`) définis dans
 `docs/nomenclature.toml`. Avant de proposer une modification :

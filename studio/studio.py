@@ -97,7 +97,10 @@ class Preview(QWidget):
     def window(self, p, r, t, pal):
         path = QPainterPath()
         path.addRoundedRect(r, 9, 9)
-        p.fillPath(path, QColor(pal["window"]))
+        win = QColor(pal["window"])
+        if t.glass_windows:
+            win.setAlpha(int(255 * t.window_opacity))
+        p.fillPath(path, win)
         title = QRectF(r.x(), r.y(), r.width(), 26)
         p.save()
         p.setClipPath(path)
@@ -265,6 +268,11 @@ class Studio(QMainWindow):
         form.addRow("Opacité du terminal", self.labeled(self.opacity, "opacity", "%"))
         self.orbit = self.slider(0, 255)
         form.addRow("Fond d'Orbit Pixel", self.labeled(self.orbit, "orbit"))
+        self.glass_win = QCheckBox("Fenêtres en verre dépoli (Kvantum)")
+        self.glass_win.toggled.connect(self.changed)
+        form.addRow("", self.glass_win)
+        self.win_opacity = self.slider(60, 100)
+        form.addRow("Opacité des fenêtres", self.labeled(self.win_opacity, "win_opacity", "%"))
 
         btns = QVBoxLayout()
         self.btn_group = QButtonGroup(self)
@@ -367,11 +375,15 @@ class Studio(QMainWindow):
         self.noise.setValue(t.noise)
         self.opacity.setValue(round(t.terminal_opacity * 100))
         self.orbit.setValue(t.orbit_alpha)
+        self.glass_win.setChecked(t.glass_windows)
+        self.win_opacity.setValue(round(t.window_opacity * 100))
+        self.win_opacity.setEnabled(t.glass_windows)
         for b in self.btn_group.buttons():
             b.setChecked(b.property("value") == t.buttons)
         self.wall.setText(str(t.wallpaper) if t.wallpaper else "")
         for lab, s, unit in ((self.blur_label, self.blur, ""), (self.noise_label, self.noise, ""),
-                             (self.opacity_label, self.opacity, "%"), (self.orbit_label, self.orbit, "")):
+                             (self.opacity_label, self.opacity, "%"), (self.orbit_label, self.orbit, ""),
+                             (self.win_opacity_label, self.win_opacity, "%")):
             lab.setText(f"{s.value()}{unit}")
         self.loading = False
         self.mark_swatch()
@@ -390,13 +402,15 @@ class Studio(QMainWindow):
             t, name=self.name.text().strip() or t.name, mode=mode, accent=accent, blur=self.blur.value(),
             noise=self.noise.value(), terminal_opacity=self.opacity.value() / 100, buttons=buttons,
             wallpaper=Path(wall) if wall and Path(os.path.expanduser(wall)).is_file() else None,
-            orbit_alpha=self.orbit.value(),
+            orbit_alpha=self.orbit.value(), glass_windows=self.glass_win.isChecked(),
+            window_opacity=self.win_opacity.value() / 100,
         )
 
     def changed(self, *_):
         if self.loading or not self.theme:
             return
         self.theme = self.collect()
+        self.win_opacity.setEnabled(self.theme.glass_windows)
         self.mark_swatch()
         self.preview.set_theme(self.theme)
         if self.live_box.isChecked():

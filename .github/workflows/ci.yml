@@ -27,6 +27,7 @@ jobs:
           QT_QPA_PLATFORM=offscreen python3 tests/test_vues.py
           QT_QPA_PLATFORM=offscreen python3 tests/test_arsenal_cmd.py
           QT_QPA_PLATFORM=offscreen python3 tests/test_studio.py
+          python3 tests/test_kvantum.py
       - name: Thèmes
         run: |
           for t in themes/*.toml; do

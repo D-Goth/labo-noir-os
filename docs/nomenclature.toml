@@ -160,7 +160,7 @@ definition = "Dispositions classique (réduire, agrandir et fermer à droite, pa
 
 [codes.THM-03]
 titre = "Thème"
-definition = "Nom, mode sombre ou clair, accent, flou et bruit du verre dépoli, opacité du terminal, boutons, fond d'écran, transparence d'Orbit Pixel."
+definition = "Nom, mode sombre ou clair, accent, flou et bruit du verre dépoli, opacité du terminal, fenêtres en verre dépoli et leur opacité, boutons, fond d'écran, transparence d'Orbit Pixel."
 
 [codes.THM-04]
 titre = "Chargement d'un thème"
@@ -184,7 +184,7 @@ definition = "Recherche des outils KDE, lecture et écriture de réglages, écri
 
 [codes.THM-09]
 titre = "Application"
-definition = "Couleurs (en alternant deux noms pour forcer Plasma à recharger), icônes, terminal, flou et boutons de KWin, accent et transparence d'Orbit Pixel, invite du terminal, cool-retro-term s'il est installé, mémorisation du thème. Le fond d'écran n'est remplacé qu'avec --fond (première connexion), pour garder celui choisi par l'utilisateur."
+definition = "Couleurs (en alternant deux noms pour forcer Plasma à recharger), icônes, terminal, flou et boutons de KWin, accent et transparence d'Orbit Pixel, invite du terminal, fenêtres en verre dépoli (Kvantum), cool-retro-term s'il est installé, mémorisation du thème. Le fond d'écran n'est remplacé qu'avec --fond (première connexion), pour garder celui choisi par l'utilisateur."
 
 [codes.THM-10]
 titre = "Commandes"
@@ -268,7 +268,7 @@ definition = "Affiche la fiche, l'environnement, l'avertissement éventuel et le
 
 [codes.ARS-11]
 titre = "Exécution"
-definition = "Prépare le rapport de la vue, lance l'outil dans un terminal ou avec QProcess (sortie en direct gardée pour la vue, code de retour). Arrêt propre puis forcé après 3 s ; pour une commande administrateur, l'arrêt passe lui aussi par pkexec."
+definition = "Prépare le rapport de la vue, lance l'outil dans un terminal ou avec QProcess (sortie en direct gardée pour la vue, code de retour). Une vue en direct est remise à zéro, affichée tout de suite et reçoit la sortie au fil de l'eau. Arrêt propre puis forcé après 3 s ; pour une commande administrateur, l'arrêt passe lui aussi par pkexec."
 
 [codes.ARS-12]
 titre = "Lancement"
@@ -348,7 +348,11 @@ definition = "Fichiers détectés par ClamAV ou YARA avec la signature ou la rè
 
 [codes.VUE-09]
 titre = "Choix et affichage d'une vue"
-definition = "Crée la vue d'un type (nmap, lynis, clamav, yara) et lui passe le rapport ou la sortie de l'outil."
+definition = "Crée la vue d'un type (nmap, lynis, clamav, yara, tshark) et lui passe le rapport ou la sortie de l'outil ; pour TShark, termine la capture et signale l'absence de paquets."
+
+[codes.VUE-10]
+titre = "TShark en direct"
+definition = "Champs demandés à TShark, ports sensibles et en clair, agrégation de la capture (paquets, volume, débit par seconde sur 60 s, protocoles, conversations dans les deux sens), courbe de débit, barres des protocoles et tableau des conversations rafraîchis deux fois par seconde."
 
 [codes.ARS-15]
 titre = "Case Administrateur"
@@ -405,6 +409,10 @@ definition = "Génère ~/.config/labnoir/prompt.sh : utilisateur à l'accent, ma
 [codes.THM-13]
 titre = "cool-retro-term"
 definition = "Met le texte à l'accent et le fond du thème dans le profil courant de cool-retro-term (sa base de réglages SQLite), seulement s'il est fermé et a déjà été lancé une fois."
+
+[codes.THM-14]
+titre = "Fenêtres en verre dépoli"
+definition = "Génère le style Kvantum LabONoir à partir de KvArcDark (sombre) ou KvArc (clair) : les bleus d'Arc deviennent l'accent, les gris sombres prennent la teinte du thème, fenêtres et menus translucides avec flou. Sans l'option, revient au style Breeze. Les applications ouvertes doivent être relancées."
 
 [codes.DSK-11]
 titre = "Chargement de l'invite"

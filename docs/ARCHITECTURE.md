@@ -56,6 +56,9 @@ si `ORBIT_LAYOUT=1`, la disposition d'Orbit Pixel calculée sur la largeur réel
 - le thème de Konsole (opacité et flou) ;
 - les réglages de KWin (force du flou, bruit, boutons des fenêtres) ;
 - l'accent et la transparence d'Orbit Pixel (`~/.config/orbitpixelrc`) ;
+- les fenêtres en verre dépoli : un style Kvantum `LabONoir` généré à partir de KvArcDark ou KvArc
+  (bleus d'Arc remplacés par l'accent, gris à la teinte du thème, fenêtres et menus translucides et
+  floutés) ; sans l'option, retour au style Breeze. Les applications déjà ouvertes sont à relancer ;
 - le fond d'écran.
 
 Plasma n'applique pas un jeu de couleurs qui porte déjà le nom du jeu actif : l'outil alterne entre
@@ -89,7 +92,11 @@ Certains outils ont une **vue graphique** (`arsenal/vues.py`), déclarée dans `
 Arsenal ajoute l'option de rapport machine (`-oX` pour Nmap, `--report-file` pour Lynis) vers
 `~/.cache/labnoir/arsenal`, partagé avec la Kali isolée, puis dessine le résultat dans l'onglet **Vue** :
 carte réseau Nmap (machines et ports colorés selon leur sensibilité), jauge et listes de Lynis,
-tableau des détections de ClamAV et YARA. L'onglet **Sortie** garde toujours le texte brut.
+tableau des détections de ClamAV et YARA. TShark a une vue **en direct** (`"direct": true`) : Arsenal lui
+fait écrire des champs séparés (`-T fields`), les agrège au fil de la capture et rafraîchit deux fois par
+seconde la courbe de débit, la part de chaque protocole et les conversations, en signalant les services
+en clair (HTTP, POP3, IMAP…) et sensibles (Telnet, SMB, RDP, bases de données…). L'onglet **Sortie**
+garde toujours le texte brut.
 
 ## Confidentialité
 

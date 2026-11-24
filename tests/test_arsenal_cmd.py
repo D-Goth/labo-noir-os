@@ -32,4 +32,10 @@ hydra = cmd("hydra", {"users": "u", "pass": "p", "target": "10.0.0.5"}, runner="
 assert hydra[:6] == ["distrobox", "enter", "kali", "--", "sudo", "hydra"], hydra
 inj = cmd("nmap", {"scan": 0, "target": "10.0.0.1; reboot"})
 assert inj[-1] == "10.0.0.1; reboot", inj
+shark = cmd("tshark", {"iface": "eth0", "count": "500"})
+assert shark[0] == "tshark" and "-l" in shark and "_ws.col.protocol" in shark, shark
+assert shark[shark.index("-c") + 1] == "500" and shark[shark.index("-i") + 1] == "eth0"
+import vues
+fields = [shark[i + 1] for i, a in enumerate(shark) if a == "-e"]
+assert fields == vues.TSHARK_FIELDS, fields
 print("commandes ok")

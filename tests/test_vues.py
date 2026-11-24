@@ -36,6 +36,18 @@ suggestion[]=AUTH-9262|Install PAM module for password strength|pam_passwdqc|
 """
 
 
+def tshark_lines():
+    rows = [
+        (1700000000.1, "", "", "192.168.1.20", "192.168.1.1", "", "", "DNS", 74, "", "", "51000", "53"),
+        (1700000000.4, "", "", "192.168.1.20", "10.0.0.5", "", "", "TELNET", 120, "50122", "23", "", ""),
+        (1700000001.2, "", "", "10.0.0.5", "192.168.1.20", "", "", "TELNET", 300, "23", "50122", "", ""),
+        (1700000003.0, "", "", "192.168.1.20", "93.184.216.34", "", "", "HTTP", 900, "50200", "80", "", ""),
+        (1700000003.5, "", "", "", "", "fe80::1", "ff02::1", "ICMPv6", 86, "", "", "", ""),
+        (1700000004.0, "aa:bb:cc:00:00:01", "ff:ff:ff:ff:ff:ff", "", "", "", "", "ARP", 42, "", "", "", ""),
+    ]
+    return "".join("|".join(str(c) for c in r) + "\n" for r in rows)
+
+
 def main():
     (HERE / "scan.xml").write_text(NMAP)
     (HERE / "lynis.dat").write_text(LYNIS)
@@ -50,6 +62,16 @@ def main():
     (HERE / "cible.bin").write_text("x")
     yr = vues.parse_yara(f"Suspect_Strings {HERE / 'cible.bin'}\nwarning: blah\n")
     assert yr == [(str(HERE / "cible.bin"), "Suspect_Strings")]
+    cap = vues.Capture()
+    text = "Capturing on 'eth0'\n" + tshark_lines()
+    assert cap.feed(text[:150]) + cap.feed(text[150:]) == 6
+    assert cap.packets == 6 and cap.bytes == 74 + 120 + 300 + 900 + 86 + 42
+    assert list(cap.rate) == [194, 300, 0, 986, 42], list(cap.rate)
+    telnet = cap.conversations[("10.0.0.5", "192.168.1.20")]
+    assert telnet.packets == 2 and telnet.level == "risque" and telnet.flags == {"telnet"}
+    assert cap.conversations[("192.168.1.20", "93.184.216.34")].level == "attention"
+    assert cap.top(1)[0].bytes == 900
+    assert cap.protocols["TELNET"] == 2 and ("aa:bb:cc:00:00:01", "ff:ff:ff:ff:ff:ff") in cap.conversations
     print("parseurs ok")
 
     from PyQt6.QtWidgets import QApplication
@@ -60,6 +82,7 @@ def main():
         ("nmap", "", HERE / "scan.xml", "nmap"),
         ("lynis", "", HERE / "lynis.dat", "lynis"),
         ("clamav", "/home/x/a.exe: Win.Trojan.Agent FOUND\n", None, "clamav"),
+        ("tshark", tshark_lines(), None, "tshark"),
     ]:
         v = vues.make_view(kind)
         v.resize(860, 560)

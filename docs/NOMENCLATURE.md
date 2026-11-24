@@ -38,6 +38,7 @@ ne pas le modifier à la main.
 | [`HRD`](#hrd) | Module durcissement | 5 |
 | [`VUE`](#vue) | Vues graphiques d'Arsenal (arsenal/vues.py) | 10 |
 | [`OUT`](#out) | Outils du dépôt (vérifications, CI) | 1 |
+| [`ABT`](#abt) | Fenêtre À propos (labnoir-about) | 3 |
 
 ## INS
 
@@ -336,7 +337,7 @@ Module base
 
 ### [BAS-01] Module base
 
-Outils de base, Flathub, copie des outils, thèmes et ressources dans /opt/labnoir, liens des commandes labnoir-*, réglages initiaux.
+Outils de base, Flathub, copie des outils, thèmes et ressources dans /opt/labnoir, liens des commandes labnoir-*, crédits et numéro de version, réglages initiaux.
 
 `modules/10-base.sh` ligne 4
 
@@ -351,8 +352,8 @@ module_run() {
     put_dir "$LABNOIR_ROOT/bin" "$LABNOIR_PREFIX/bin"
     put_dir "$LABNOIR_ROOT/themes" "$LABNOIR_PREFIX/themes"
     put_dir "$LABNOIR_ROOT/desktop" "$LABNOIR_PREFIX/desktop"
-    run chmod 0755 "$LABNOIR_PREFIX"/bin/*
-    local tool
+    put "$LABNOIR_ROOT/CREDITS.md" "$LABNOIR_PREFIX/CREDITS.md"
+    put "$LABNOIR_ROOT/VERSION" "$LABNOIR_PREFIX/VERSION"
 …
 ```
 
@@ -360,7 +361,7 @@ module_run() {
 
 Repère l'hyperviseur (systemd-detect-virt) et installe ses outils : open-vm-tools-desktop pour VMware, spice-vdagent pour QEMU/KVM, Additions invité pour VirtualBox. L'écran suit alors la taille de la fenêtre.
 
-`modules/10-base.sh` ligne 27
+`modules/10-base.sh` ligne 29
 
 ```bash
 bas_guest_tools() {
@@ -380,7 +381,7 @@ bas_guest_tools() {
 
 Installe Zen Browser depuis Flathub et le choisit comme navigateur par défaut du compte cible.
 
-`modules/10-base.sh` ligne 40
+`modules/10-base.sh` ligne 42
 
 ```bash
 bas_browser() {
@@ -590,9 +591,9 @@ dsk_render_defaults() {
 
 ### [DSK-03] Réglages par défaut du système
 
-kdeglobals, kwinrc (flou, bordures, boutons réduire, agrandir et fermer à droite), konsolerc et plasmarc dans /etc/xdg : ils valent pour tout nouveau compte.
+kdeglobals, kwinrc (flou, bordures, boutons réduire, agrandir et fermer à droite), konsolerc, plasmarc et kcm-about-distrorc (logo, site et nom de Lab'O Noir dans « À propos de ce système ») dans /etc/xdg : ils valent pour tout nouveau compte.
 
-`modules/30-bureau.sh` ligne 45
+`modules/30-bureau.sh` ligne 46
 
 ```bash
 dsk_system_defaults() {
@@ -600,6 +601,7 @@ dsk_system_defaults() {
     put "$LABNOIR_ROOT/config/xdg/kwinrc" /etc/xdg/kwinrc
     put "$LABNOIR_ROOT/config/xdg/konsolerc" /etc/xdg/konsolerc
     put "$LABNOIR_ROOT/config/xdg/plasmarc" /etc/xdg/plasmarc
+    put "$LABNOIR_ROOT/config/xdg/kcm-about-distrorc" /etc/xdg/kcm-about-distrorc
 }
 ```
 
@@ -607,7 +609,7 @@ dsk_system_defaults() {
 
 SDDM avec le thème Breeze et le fond Lab'O Noir.
 
-`modules/30-bureau.sh` ligne 53
+`modules/30-bureau.sh` ligne 55
 
 ```bash
 dsk_sddm() {
@@ -627,7 +629,7 @@ dsk_sddm() {
 
 Installe le lanceur automatique et remet à zéro le marqueur du compte cible pour réappliquer le bureau.
 
-`modules/30-bureau.sh` ligne 86
+`modules/30-bureau.sh` ligne 88
 
 ```bash
 dsk_first_login() {
@@ -725,7 +727,7 @@ conf() { [[ -f "$CONF" ]] && sed -n "s|^$1=||p" "$CONF" | tail -n1; }
 
 ### [DSK-10] Installation du studio
 
-Copie le studio dans /opt/labnoir/studio, crée la commande labnoir-studio et son entrée dans le menu des applications.
+Copie le studio dans /opt/labnoir/studio, crée la commande labnoir-studio et son entrée dans le menu des applications, ainsi que celle de la fenêtre À propos.
 
 `modules/30-bureau.sh` ligne 36
 
@@ -735,6 +737,7 @@ dsk_studio() {
     run chmod 0755 "$LABNOIR_PREFIX/studio/studio.py"
     run ln -sfn "$LABNOIR_PREFIX/studio/studio.py" /usr/local/bin/labnoir-studio
     put "$LABNOIR_ROOT/config/applications/labnoir-studio.desktop" /usr/share/applications/labnoir-studio.desktop
+    put "$LABNOIR_ROOT/config/applications/labnoir-about.desktop" /usr/share/applications/labnoir-about.desktop
     ok "Studio Lab'O Noir : menu des applications ou commande « labnoir-studio »"
 }
 ```
@@ -743,7 +746,7 @@ dsk_studio() {
 
 Ajoute une seule fois le chargement de l'invite Lab'O Noir au .bashrc du compte cible et à celui des futurs comptes (/etc/skel).
 
-`modules/30-bureau.sh` ligne 66
+`modules/30-bureau.sh` ligne 68
 
 ```bash
 dsk_prompt() {
@@ -1040,7 +1043,7 @@ class Studio(QMainWindow):
 
 Liste tous les thèmes (le thème actif marqué à sa couleur), remplit le formulaire et l'aperçu ; seuls les thèmes personnels peuvent être supprimés.
 
-`studio/studio.py` ligne 341
+`studio/studio.py` ligne 344
 
 ```python
 def refresh_list(self, select=None):
@@ -1062,7 +1065,7 @@ def refresh_list(self, select=None):
 
 Rassemble les valeurs du formulaire en thème, met à jour l'aperçu à chaque changement et, si l'aperçu en direct est coché, l'applique au bureau après 0,7 s sans modification ; accent par pastille, pipette ou code hexadécimal ; choix du fond d'écran.
 
-`studio/studio.py` ligne 392
+`studio/studio.py` ligne 395
 
 ```python
 def collect(self):
@@ -1084,7 +1087,7 @@ def collect(self):
 
 Enregistre dans les thèmes personnels (sans écraser un thème fourni), applique via le moteur (fond d'écran seulement si demandé), duplique, supprime, importe un thème vérifié et exporte un thème sans son fond d'écran.
 
-`studio/studio.py` ligne 445
+`studio/studio.py` ligne 448
 
 ```python
 def save_theme(self):
@@ -1106,7 +1109,7 @@ def save_theme(self):
 
 Application Qt, police, feuille de style à l'accent du thème actif.
 
-`studio/studio.py` ligne 523
+`studio/studio.py` ligne 526
 
 ```python
 def main():
@@ -1496,7 +1499,7 @@ class Arsenal(QMainWindow):
 
 Affiche la fiche, l'environnement, l'avertissement éventuel et le formulaire ; aperçu de la commande exacte.
 
-`arsenal/arsenal.py` ligne 375
+`arsenal/arsenal.py` ligne 380
 
 ```python
 def select(self, item, _prev=None):
@@ -1518,7 +1521,7 @@ def select(self, item, _prev=None):
 
 Prépare le rapport de la vue, lance l'outil dans un terminal ou avec QProcess (sortie en direct gardée pour la vue, code de retour). Une vue en direct est remise à zéro, affichée tout de suite et reçoit la sortie au fil de l'eau. Arrêt propre puis forcé après 3 s ; pour une commande administrateur, l'arrêt passe lui aussi par pkexec.
 
-`arsenal/arsenal.py` ligne 440
+`arsenal/arsenal.py` ligne 445
 
 ```python
 def run(self):
@@ -1540,7 +1543,7 @@ def run(self):
 
 Application Qt, style, police et feuille de style à l'accent du thème.
 
-`arsenal/arsenal.py` ligne 543
+`arsenal/arsenal.py` ligne 548
 
 ```python
 def main():
@@ -1562,7 +1565,7 @@ def main():
 
 Crée la vue graphique de l'outil choisi à côté de l'onglet Sortie, ou la retire s'il n'en a pas.
 
-`arsenal/arsenal.py` ligne 397
+`arsenal/arsenal.py` ligne 402
 
 ```python
 def set_view(self, tool):
@@ -1581,7 +1584,7 @@ def set_view(self, tool):
 
 À la fin de l'exécution, lit le rapport ou la sortie et affiche la vue ; signale un rapport absent ou illisible.
 
-`arsenal/arsenal.py` ligne 503
+`arsenal/arsenal.py` ligne 508
 
 ```python
 def show_view(self):
@@ -1603,7 +1606,7 @@ def show_view(self):
 
 Cochée et verrouillée quand l'outil ou l'option choisie exige root (scan SYN ou UDP, détection du système, rkhunter) ; sinon libre, pour un audit Lynis complet par exemple. Seule la commande est élevée, jamais Arsenal lui-même.
 
-`arsenal/arsenal.py` ligne 409
+`arsenal/arsenal.py` ligne 414
 
 ```python
 def sync_admin(self):
@@ -1941,4 +1944,44 @@ for list in "$ROOT"/packages/*.list; do
             printf '%s : %s introuvable\n' "$name" "$pkg"
             missing=$((missing + 1))
 …
+```
+
+
+## ABT
+
+Fenêtre À propos (labnoir-about)
+
+### [ABT-01] Version et accent
+
+Chemins d'installation et du dépôt, version lue dans /etc/labnoir/labnoir.conf ou le fichier VERSION, accent du thème actif.
+
+`bin/labnoir-about` ligne 12
+
+```python
+HERE = Path(__file__).resolve().parent
+```
+
+### [ABT-02] Fenêtre À propos
+
+Logo, nom, version, licence, lien du dépôt et crédits lus dans CREDITS.md (Markdown rendu par Qt), dont le clin d'œil à Kyagon.
+
+`bin/labnoir-about` ligne 47
+
+```python
+STYLE = """
+```
+
+### [ABT-03] Lancement
+
+Applique le style à l'accent du thème et ouvre la fenêtre ; Arsenal et le studio l'ouvrent par leur bouton À propos.
+
+`bin/labnoir-about` ligne 96
+
+```python
+def main():
+    app = QApplication(sys.argv)
+    app.setApplicationName("labnoir-about")
+    app.setDesktopFileName("labnoir-about")
+    app.setStyleSheet(STYLE.replace("ACCENT", accent()))
+    About().exec()
 ```

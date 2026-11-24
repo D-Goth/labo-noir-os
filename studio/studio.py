@@ -9,7 +9,7 @@ from importlib.util import module_from_spec, spec_from_loader
 from io import StringIO
 from pathlib import Path
 
-from PyQt6.QtCore import QPointF, QRectF, Qt, QTimer
+from PyQt6.QtCore import QPointF, QProcess, QRectF, Qt, QTimer
 from PyQt6.QtGui import QBrush, QColor, QFont, QIcon, QLinearGradient, QPainter, QPainterPath, QPen
 from PyQt6.QtWidgets import (
     QApplication, QButtonGroup, QCheckBox, QColorDialog, QFileDialog, QFormLayout, QFrame,
@@ -309,6 +309,9 @@ class Studio(QMainWindow):
         for b in (self.btn_apply, self.btn_save, self.btn_both):
             actions.addWidget(b)
         actions.addStretch(1)
+        about = QPushButton("À propos")
+        about.clicked.connect(lambda: QProcess.startDetached("labnoir-about", []))
+        actions.addWidget(about)
         form_box.addLayout(actions)
         self.status = QLabel(objectName="muted")
         self.status.setWordWrap(True)

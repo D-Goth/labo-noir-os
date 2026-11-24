@@ -253,7 +253,12 @@ class Arsenal(QMainWindow):
         sl.addWidget(self.kali_state)
         refresh = QPushButton("Actualiser")
         refresh.clicked.connect(self.refresh_runners)
-        sl.addWidget(refresh)
+        about = QPushButton("À propos")
+        about.clicked.connect(lambda: QProcess.startDetached("labnoir-about", []))
+        foot = QHBoxLayout()
+        foot.addWidget(refresh, 1)
+        foot.addWidget(about)
+        sl.addLayout(foot)
         split.addWidget(side)
 
         main = QFrame(objectName="main")

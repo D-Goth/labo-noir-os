@@ -39,6 +39,7 @@ dsk_studio() {
     run chmod 0755 "$LABNOIR_PREFIX/studio/studio.py"
     run ln -sfn "$LABNOIR_PREFIX/studio/studio.py" /usr/local/bin/labnoir-studio
     put "$LABNOIR_ROOT/config/applications/labnoir-studio.desktop" /usr/share/applications/labnoir-studio.desktop
+    put "$LABNOIR_ROOT/config/applications/labnoir-about.desktop" /usr/share/applications/labnoir-about.desktop
     ok "Studio Lab'O Noir : menu des applications ou commande « labnoir-studio »"
 }
 
@@ -48,6 +49,7 @@ dsk_system_defaults() {
     put "$LABNOIR_ROOT/config/xdg/kwinrc" /etc/xdg/kwinrc
     put "$LABNOIR_ROOT/config/xdg/konsolerc" /etc/xdg/konsolerc
     put "$LABNOIR_ROOT/config/xdg/plasmarc" /etc/xdg/plasmarc
+    put "$LABNOIR_ROOT/config/xdg/kcm-about-distrorc" /etc/xdg/kcm-about-distrorc
 }
 
 # [DSK-04]

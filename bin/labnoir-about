@@ -1,0 +1,115 @@
+#!/usr/bin/env python3
+import os
+import re
+import sys
+import tomllib
+from pathlib import Path
+
+from PyQt6.QtCore import Qt
+from PyQt6.QtGui import QColor, QPalette, QPixmap
+from PyQt6.QtWidgets import QApplication, QDialog, QHBoxLayout, QLabel, QPushButton, QTextBrowser, QVBoxLayout
+
+# [ABT-01]
+HERE = Path(__file__).resolve().parent
+PREFIX = Path("/opt/labnoir")
+CONFIG_HOME = Path(os.environ.get("XDG_CONFIG_HOME", Path.home() / ".config"))
+THEME_DIRS = [Path.home() / ".local/share/labnoir/themes", PREFIX / "themes", HERE.parent / "themes"]
+REPO = "https://github.com/D-Goth/labo-noir-os"
+
+
+def first(*paths):
+    return next((p for p in paths if p.is_file()), None)
+
+
+def version():
+    conf = Path("/etc/labnoir/labnoir.conf")
+    if conf.is_file():
+        m = re.search(r"^VERSION=(.+)$", conf.read_text(encoding="utf-8"), re.M)
+        if m:
+            return m.group(1).strip()
+    v = first(PREFIX / "VERSION", HERE.parent / "VERSION")
+    return v.read_text(encoding="utf-8").strip() if v else "?"
+
+
+def accent():
+    try:
+        ident = (CONFIG_HOME / "labnoir" / "theme").read_text(encoding="utf-8").strip()
+    except OSError:
+        ident = "labonoir"
+    p = first(*(d / f"{ident}.toml" for d in THEME_DIRS))
+    try:
+        with open(p, "rb") as f:
+            return tomllib.load(f).get("accent", "#FF1654")
+    except (TypeError, OSError, tomllib.TOMLDecodeError):
+        return "#FF1654"
+
+
+# [ABT-02]
+STYLE = """
+QDialog { background: #121215; }
+QLabel { color: #E8E8EC; }
+QLabel#muted { color: #8C8C95; }
+QLabel#title { font-size: 22px; font-weight: 600; }
+QTextBrowser { background: #18181C; color: #E8E8EC; border: 1px solid #26262C; border-radius: 10px; padding: 10px; }
+QPushButton { background: #1E1E23; color: #E8E8EC; border: 1px solid #2A2A31; border-radius: 8px; padding: 7px 16px; }
+QPushButton:hover { border-color: ACCENT; }
+QScrollBar:vertical { background: transparent; width: 8px; margin: 4px 0; }
+QScrollBar::handle:vertical { background: #34343C; border-radius: 4px; min-height: 30px; }
+QScrollBar::add-line, QScrollBar::sub-line, QScrollBar::add-page, QScrollBar::sub-page { background: none; height: 0; }
+"""
+
+
+class About(QDialog):
+    def __init__(self):
+        super().__init__()
+        self.setWindowTitle("À propos de Lab'O Noir")
+        self.resize(560, 640)
+        lay = QVBoxLayout(self)
+        lay.setContentsMargins(24, 24, 24, 20)
+        lay.setSpacing(14)
+        head = QHBoxLayout()
+        logo = QLabel()
+        icon = first(Path("/usr/share/icons/hicolor/256x256/apps/labonoir.png"), HERE.parent / "desktop/icons/labonoir.png")
+        if icon:
+            logo.setPixmap(QPixmap(str(icon)).scaled(72, 72, Qt.AspectRatioMode.KeepAspectRatio,
+                                                     Qt.TransformationMode.SmoothTransformation))
+        head.addWidget(logo)
+        names = QVBoxLayout()
+        names.addWidget(QLabel("Lab'O Noir OS", objectName="title"))
+        names.addWidget(QLabel(f"Version {version()} · GPL-3.0", objectName="muted"))
+        site = QLabel(f'<a href="{REPO}">{REPO.removeprefix("https://")}</a>')
+        site.setOpenExternalLinks(True)
+        names.addWidget(site)
+        head.addLayout(names, 1)
+        lay.addLayout(head)
+        text = QTextBrowser()
+        text.setOpenExternalLinks(True)
+        credits = first(PREFIX / "CREDITS.md", HERE.parent / "CREDITS.md")
+        body = credits.read_text(encoding="utf-8") if credits else "Crédits introuvables."
+        body = re.sub(r"^# .*\n+", "", body).replace("\n## ", "\n### ")
+        text.setMarkdown(re.sub(r"^## ", "### ", body))
+        lay.addWidget(text, 1)
+        close = QPushButton("Fermer")
+        close.clicked.connect(self.accept)
+        row = QHBoxLayout()
+        row.addStretch(1)
+        row.addWidget(close)
+        lay.addLayout(row)
+
+
+# [ABT-03]
+def main():
+    app = QApplication(sys.argv)
+    app.setApplicationName("labnoir-about")
+    app.setDesktopFileName("labnoir-about")
+    color = accent()
+    pal = app.palette()
+    for role in (QPalette.ColorRole.Link, QPalette.ColorRole.LinkVisited):
+        pal.setColor(role, QColor(color))
+    app.setPalette(pal)
+    app.setStyleSheet(STYLE.replace("ACCENT", color))
+    About().exec()
+
+
+if __name__ == "__main__":
+    main()

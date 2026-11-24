@@ -41,7 +41,8 @@ Le paquet manquant d'une liste est signalé puis sauté, pour qu'un nom changé 
 Le bureau est un **look-and-feel Plasma** (`desktop/lookandfeel/fr.blacklab.labonoir`) : réglages par
 défaut (couleurs, icônes Papirus, décorations Breeze) et disposition des panneaux écrite en JavaScript
 Plasma : barre fine en haut avec menu global et horloge centrée, dock flottant centré qui s'efface
-devant les fenêtres. KWin active le flou (verre dépoli) et la décoration sans bordure.
+devant les fenêtres. KWin active le flou (verre dépoli) et la décoration sans bordure, avec les boutons
+réduire, agrandir et fermer en haut à droite (modifiable par thème : `classique`, `elementary`, `macos`).
 
 Comme Plasma ne lit la disposition qu'à l'application du look-and-feel, `labnoir-first-login` (lancé
 automatiquement à la première connexion de chaque compte) applique le look-and-feel, le thème choisi et,

@@ -8,7 +8,7 @@ bruit = 1
 opacite_terminal = 0.82
 
 [fenetres]
-boutons = "macos"
+boutons = "classique"
 
 [fond]
 image = "labonoir.jpg"

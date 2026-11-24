@@ -122,7 +122,7 @@ definition = "Génère le jeu de couleurs et le thème du terminal du thème cho
 
 [codes.DSK-03]
 titre = "Réglages par défaut du système"
-definition = "kdeglobals, kwinrc (flou, bordures, boutons), konsolerc et plasmarc dans /etc/xdg : ils valent pour tout nouveau compte."
+definition = "kdeglobals, kwinrc (flou, bordures, boutons réduire, agrandir et fermer à droite), konsolerc et plasmarc dans /etc/xdg : ils valent pour tout nouveau compte."
 
 [codes.DSK-04]
 titre = "Écran de connexion"
@@ -154,7 +154,7 @@ definition = "Thèmes et fonds cherchés dans ~/.local/share/labnoir, /opt/labno
 
 [codes.THM-02]
 titre = "Boutons des fenêtres"
-definition = "Dispositions elementary (fermer à gauche, agrandir à droite), macos (tout à gauche) et classique."
+definition = "Dispositions classique (réduire, agrandir et fermer à droite, par défaut), elementary (fermer à gauche, agrandir à droite) et macos (tout à gauche)."
 
 [codes.THM-03]
 titre = "Thème"

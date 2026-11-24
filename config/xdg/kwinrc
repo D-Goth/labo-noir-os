@@ -10,8 +10,8 @@ NoiseStrength=2
 [org.kde.kdecoration2]
 library=org.kde.breeze
 theme=Breeze
-ButtonsOnLeft=X
-ButtonsOnRight=A
+ButtonsOnLeft=M
+ButtonsOnRight=IAX
 BorderSize=None
 BorderSizeAuto=false
 

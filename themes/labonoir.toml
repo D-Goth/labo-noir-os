@@ -8,7 +8,7 @@ bruit = 2
 opacite_terminal = 0.86
 
 [fenetres]
-boutons = "elementary"
+boutons = "classique"
 
 [fond]
 image = "labonoir.jpg"

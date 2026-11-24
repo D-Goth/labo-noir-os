@@ -551,7 +551,7 @@ dsk_render_defaults() {
 
 ### [DSK-03] Réglages par défaut du système
 
-kdeglobals, kwinrc (flou, bordures, boutons), konsolerc et plasmarc dans /etc/xdg : ils valent pour tout nouveau compte.
+kdeglobals, kwinrc (flou, bordures, boutons réduire, agrandir et fermer à droite), konsolerc et plasmarc dans /etc/xdg : ils valent pour tout nouveau compte.
 
 `modules/30-bureau.sh` ligne 34
 
@@ -701,7 +701,7 @@ REPO = Path(__file__).resolve().parent.parent
 
 ### [THM-02] Boutons des fenêtres
 
-Dispositions elementary (fermer à gauche, agrandir à droite), macos (tout à gauche) et classique.
+Dispositions classique (réduire, agrandir et fermer à droite, par défaut), elementary (fermer à gauche, agrandir à droite) et macos (tout à gauche).
 
 `bin/labnoir-theme` ligne 22
 

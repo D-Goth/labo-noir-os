@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<kcfg xmlns="http://www.kde.org/standards/kcfg/1.0"
+      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xsi:schemaLocation="http://www.kde.org/standards/kcfg/1.0 http://www.kde.org/standards/kcfg/1.0/kcfg.xsd">
+    <group name="General">
+        <entry name="moduleId" type="String">
+            <default>cpu</default>
+        </entry>
+        <entry name="useShared" type="Bool">
+            <default>true</default>
+        </entry>
+        <entry name="accent" type="String">
+            <default>#ff1654</default>
+        </entry>
+        <entry name="bgAlpha" type="Int">
+            <default>190</default>
+        </entry>
+        <entry name="fontFamily" type="String">
+            <default>LED Dot-Matrix</default>
+        </entry>
+        <entry name="diskMount" type="String">
+            <default>/</default>
+        </entry>
+        <entry name="diskLabel" type="String">
+            <default></default>
+        </entry>
+    </group>
+</kcfg>

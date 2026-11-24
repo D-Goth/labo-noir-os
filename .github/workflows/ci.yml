@@ -1,0 +1,37 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  qualite:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: ShellCheck
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq shellcheck
+          shellcheck -x install.sh lib/common.sh modules/*.sh tools/*.sh \
+            bin/labnoir-privacy bin/labnoir-redteam bin/labnoir-first-login
+      - name: Python
+        run: python3 -m py_compile bin/labnoir-theme arsenal/arsenal.py scripts/nomenclature.py
+      - name: Nomenclature
+        run: python3 scripts/nomenclature.py --check
+      - name: Catalogue Arsenal
+        run: python3 -c "import json; json.load(open('arsenal/tools.json'))"
+      - name: Thèmes
+        run: |
+          for t in themes/*.toml; do
+            python3 bin/labnoir-theme render colors "$(basename "$t" .toml)" "/tmp/$(basename "$t").colors"
+          done
+
+  debian:
+    runs-on: ubuntu-latest
+    container: debian:trixie
+    steps:
+      - uses: actions/checkout@v4
+      - name: Paquets des listes
+        run: ./tools/check-packages.sh
+      - name: Simulation de l'installation
+        run: ./install.sh --dry-run --yes --user root

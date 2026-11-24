@@ -1,247 +1,444 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-# 🖤 Arsenal - Lanceur d'outils du Lab'O Noir
-
-import sys
 import json
-import subprocess
 import os
-from PyQt5.QtWidgets import *
-from PyQt5.QtCore import *
-from PyQt5.QtGui import *
+import shlex
+import shutil
+import subprocess
+import sys
+import tomllib
+from pathlib import Path
 
-class ArsenalLauncher(QMainWindow):
+from PyQt6.QtCore import QProcess, Qt, QTimer
+from PyQt6.QtGui import QBrush, QColor, QFont, QFontDatabase, QIcon, QTextCursor
+from PyQt6.QtWidgets import (
+    QApplication, QCheckBox, QComboBox, QFormLayout, QFrame, QHBoxLayout, QLabel, QLineEdit,
+    QMainWindow, QPlainTextEdit, QPushButton, QSplitter, QTreeWidget, QTreeWidgetItem, QVBoxLayout,
+    QWidget,
+)
+
+# [ARS-02]
+HERE = Path(__file__).resolve().parent
+TOOLS = HERE / "tools.json"
+STYLE = HERE / "style.qss"
+ICON = HERE / "assets" / "icon.png"
+BOX = os.environ.get("LABNOIR_KALI_BOX", "kali")
+CONFIG_HOME = Path(os.environ.get("XDG_CONFIG_HOME", Path.home() / ".config"))
+THEME_DIRS = [Path.home() / ".local/share/labnoir/themes", Path("/opt/labnoir/themes"), HERE.parent / "themes"]
+RUNNER_LABEL = {"host": "Système", "kali": "Kali isolée"}
+
+
+# [ARS-03]
+def load_tools():
+    with open(TOOLS, encoding="utf-8") as f:
+        data = json.load(f)
+    return data.get("categories", [])
+
+
+# [ARS-04]
+def theme_accent():
+    try:
+        ident = (CONFIG_HOME / "labnoir" / "theme").read_text(encoding="utf-8").strip()
+    except OSError:
+        ident = "labonoir"
+    for d in THEME_DIRS:
+        p = d / f"{ident}.toml"
+        if p.is_file():
+            try:
+                with open(p, "rb") as f:
+                    return tomllib.load(f).get("accent", "#FF1654")
+            except (OSError, tomllib.TOMLDecodeError):
+                break
+    return "#FF1654"
+
+
+# [ARS-05]
+class Runners:
+    def __init__(self):
+        self.refresh()
+
+    def refresh(self):
+        self.distrobox = shutil.which("distrobox") is not None
+        self.kali = False
+        if self.distrobox:
+            try:
+                out = subprocess.run(["distrobox", "list", "--no-color"], capture_output=True, text=True,
+                                     timeout=10).stdout
+                self.kali = any(line.split("|")[1].strip() == BOX for line in out.splitlines()[1:]
+                                if line.count("|") >= 2)
+            except (OSError, subprocess.SubprocessError, IndexError):
+                self.kali = False
+
+    def resolve(self, tool):
+        wanted = tool.get("runner", "host")
+        on_host = shutil.which(tool["program"]) is not None
+        if wanted == "auto":
+            if on_host:
+                return "host", True, ""
+            wanted = "kali"
+        if wanted == "host":
+            return "host", on_host, "" if on_host else f"« {tool['program']} » n'est pas installé sur le système"
+        if not self.distrobox:
+            return "kali", False, "Distrobox absent : sudo ./install.sh --only redteam"
+        if not self.kali:
+            return "kali", False, "Kali isolée absente : lance « labnoir-redteam init »"
+        return "kali", True, ""
+
+
+# [ARS-06]
+def build_args(tool, values):
+    args = []
+    for p in tool.get("params", []):
+        v = values.get(p["id"])
+        if p["type"] == "flag":
+            if v:
+                args += p["args"]
+        elif p["type"] == "choice":
+            opts = p["options"]
+            idx = v if isinstance(v, int) and 0 <= v < len(opts) else p.get("default", 0)
+            args += opts[idx]["args"]
+        else:
+            text = (v or "").strip()
+            if not text:
+                if p.get("required"):
+                    raise ValueError(f"« {p['label']} » est obligatoire")
+                continue
+            if text.startswith("~"):
+                text = os.path.expanduser(text)
+            if "prefix" in p:
+                args.append(p["prefix"] + text)
+            elif "flag" in p:
+                args += [p["flag"], text]
+            else:
+                args.append(text)
+    return args
+
+
+def full_command(tool, runner, args):
+    cmd = [tool["program"], *args]
+    if tool.get("sudo"):
+        cmd = ["sudo", *cmd]
+    if runner == "kali":
+        cmd = ["distrobox", "enter", BOX, "--", *cmd]
+    return cmd
+
+
+# [ARS-07]
+def terminal_command(cmd):
+    if shutil.which("konsole"):
+        return ["konsole", "--hold", "-e", *cmd]
+    if shutil.which("x-terminal-emulator"):
+        return ["x-terminal-emulator", "-e", *cmd]
+    return None
+
+
+# [ARS-08]
+class ParamForm(QWidget):
+    def __init__(self, on_change):
+        super().__init__()
+        self.on_change = on_change
+        self.layout_ = QFormLayout(self)
+        self.layout_.setContentsMargins(0, 0, 0, 0)
+        self.layout_.setHorizontalSpacing(16)
+        self.layout_.setVerticalSpacing(10)
+        self.fields = {}
+
+    def build(self, tool):
+        while self.layout_.rowCount():
+            self.layout_.removeRow(0)
+        self.fields = {}
+        for p in tool.get("params", []):
+            if p["type"] == "flag":
+                w = QCheckBox(p["label"])
+                w.toggled.connect(self.on_change)
+                self.layout_.addRow("", w)
+            elif p["type"] == "choice":
+                w = QComboBox()
+                w.addItems([o["label"] for o in p["options"]])
+                w.setCurrentIndex(p.get("default", 0))
+                w.currentIndexChanged.connect(self.on_change)
+                self.layout_.addRow(p["label"], w)
+            else:
+                w = QLineEdit()
+                w.setPlaceholderText(p.get("placeholder", ""))
+                w.setText(p.get("default", ""))
+                w.textChanged.connect(self.on_change)
+                label = p["label"] + (" *" if p.get("required") else "")
+                self.layout_.addRow(label, w)
+            self.fields[p["id"]] = (p, w)
+
+    def values(self):
+        out = {}
+        for pid, (p, w) in self.fields.items():
+            if p["type"] == "flag":
+                out[pid] = w.isChecked()
+            elif p["type"] == "choice":
+                out[pid] = w.currentIndex()
+            else:
+                out[pid] = w.text()
+        return out
+
+
+# [ARS-09]
+class Arsenal(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("Arsenal - Lab'O Noir")
-        self.setGeometry(100, 100, 1100, 750)
-        
-        base_dir = os.path.dirname(os.path.abspath(__file__))
-        db_path = os.path.join(base_dir, "tools_db.json")
-        with open(db_path, "r") as f:
-            self.tools_data = json.load(f)
-        
-        self.current_tool = None
-        self.inputs = {}
-        self.params_widgets = []  # pour garder trace des widgets
-        self.initUI()
-        self.load_styles()
-    
-    def initUI(self):
-        central = QWidget()
-        self.setCentralWidget(central)
-        layout = QHBoxLayout(central)
-        layout.setSpacing(20)
-        layout.setContentsMargins(20, 20, 20, 20)
-        
-        left_panel = QWidget()
-        left_panel.setFixedWidth(300)
-        left_layout = QVBoxLayout(left_panel)
-        left_layout.setSpacing(10)
-        
-        logo_label = QLabel()
-        base_dir = os.path.dirname(os.path.abspath(__file__))
-        icon_path = os.path.join(base_dir, "assets", "icon.png")
-        if os.path.exists(icon_path):
-            pixmap = QPixmap(icon_path).scaled(64, 64, Qt.KeepAspectRatio, Qt.SmoothTransformation)
-            logo_label.setPixmap(pixmap)
-        logo_label.setAlignment(Qt.AlignCenter)
-        left_layout.addWidget(logo_label)
-        
-        title = QLabel("ARSENAL")
-        title.setAlignment(Qt.AlignCenter)
-        title.setStyleSheet("font-size: 24px; font-weight: bold; color: #FF1654;")
-        left_layout.addWidget(title)
-        
-        self.tool_list = QListWidget()
-        self.tool_list.itemClicked.connect(self.on_tool_selected)
-        left_layout.addWidget(self.tool_list)
-        
-        right_panel = QWidget()
-        right_layout = QVBoxLayout(right_panel)
-        right_layout.setSpacing(10)
-        
-        self.desc_label = QLabel("Sélectionnez un outil")
-        self.desc_label.setWordWrap(True)
-        self.desc_label.setStyleSheet("color: #C0C0C0; padding: 10px; background: #1A1A1A; border-radius: 5px;")
-        right_layout.addWidget(self.desc_label)
-        
-        self.params_widget = QWidget()
-        self.params_layout = QFormLayout(self.params_widget)
-        self.params_layout.setSpacing(8)
-        right_layout.addWidget(self.params_widget)
-        
-        self.run_btn = QPushButton("▶ EXÉCUTER")
-        self.run_btn.setStyleSheet("""
-            QPushButton {
-                background-color: #FF1654;
-                color: #FFFFFF;
-                font-weight: bold;
-                padding: 12px;
-                border-radius: 5px;
-                font-size: 14px;
-            }
-            QPushButton:hover {
-                background-color: #CC1144;
-            }
-        """)
-        self.run_btn.clicked.connect(self.execute_tool)
-        right_layout.addWidget(self.run_btn)
-        
-        self.output_area = QTextEdit()
-        self.output_area.setFont(QFont("Monospace", 10))
-        self.output_area.setStyleSheet("""
-            QTextEdit {
-                background-color: #0A0A0A;
-                color: #FFFFFF;
-                border: 1px solid #FF1654;
-                border-radius: 5px;
-                padding: 10px;
-                font-family: 'JetBrains Mono', monospace;
-            }
-        """)
-        right_layout.addWidget(self.output_area)
-        
-        layout.addWidget(left_panel)
-        layout.addWidget(right_panel)
-        
-        self.populate_tools()
-    
-    def populate_tools(self):
-        for cat in self.tools_data["categories"]:
-            item = QListWidgetItem(f"📁 {cat['name']}")
-            item.setFlags(item.flags() & ~Qt.ItemIsSelectable)
-            self.tool_list.addItem(item)
+        self.setWindowTitle("Arsenal")
+        self.resize(1180, 760)
+        if ICON.exists():
+            self.setWindowIcon(QIcon(str(ICON)))
+        self.categories = load_tools()
+        self.runners = Runners()
+        self.tool = None
+        self.proc = None
+        self.build_ui()
+        self.populate()
+
+    def build_ui(self):
+        root = QWidget()
+        self.setCentralWidget(root)
+        outer = QHBoxLayout(root)
+        outer.setContentsMargins(0, 0, 0, 0)
+        split = QSplitter(Qt.Orientation.Horizontal)
+        outer.addWidget(split)
+
+        side = QFrame(objectName="side")
+        sl = QVBoxLayout(side)
+        sl.setContentsMargins(18, 20, 18, 18)
+        sl.setSpacing(12)
+        title = QLabel("Arsenal", objectName="brand")
+        sl.addWidget(title)
+        self.search = QLineEdit(placeholderText="Rechercher un outil…")
+        self.search.textChanged.connect(self.filter)
+        sl.addWidget(self.search)
+        self.tree = QTreeWidget()
+        self.tree.setHeaderHidden(True)
+        self.tree.setIndentation(12)
+        self.tree.currentItemChanged.connect(self.select)
+        sl.addWidget(self.tree, 1)
+        self.kali_state = QLabel(objectName="muted")
+        self.kali_state.setWordWrap(True)
+        sl.addWidget(self.kali_state)
+        refresh = QPushButton("Actualiser")
+        refresh.clicked.connect(self.refresh_runners)
+        sl.addWidget(refresh)
+        split.addWidget(side)
+
+        main = QFrame(objectName="main")
+        ml = QVBoxLayout(main)
+        ml.setContentsMargins(28, 24, 28, 24)
+        ml.setSpacing(14)
+        head = QHBoxLayout()
+        self.name = QLabel("Choisis un outil", objectName="title")
+        head.addWidget(self.name)
+        head.addStretch(1)
+        self.badge = QLabel(objectName="badge")
+        self.badge.hide()
+        head.addWidget(self.badge)
+        ml.addLayout(head)
+        self.desc = QLabel(objectName="muted")
+        self.desc.setWordWrap(True)
+        ml.addWidget(self.desc)
+        self.warning = QLabel(objectName="warning")
+        self.warning.setWordWrap(True)
+        self.warning.hide()
+        ml.addWidget(self.warning)
+
+        self.form = ParamForm(self.update_preview)
+        ml.addWidget(self.form)
+
+        self.preview = QLineEdit(objectName="preview")
+        self.preview.setReadOnly(True)
+        mono = QFontDatabase.systemFont(QFontDatabase.SystemFont.FixedFont)
+        self.preview.setFont(mono)
+        ml.addWidget(self.preview)
+
+        actions = QHBoxLayout()
+        self.run_btn = QPushButton("Exécuter", objectName="accent")
+        self.run_btn.clicked.connect(self.run)
+        self.stop_btn = QPushButton("Arrêter")
+        self.stop_btn.clicked.connect(self.stop)
+        self.stop_btn.setEnabled(False)
+        copy = QPushButton("Copier la commande")
+        copy.clicked.connect(lambda: QApplication.clipboard().setText(self.preview.text()))
+        clear = QPushButton("Effacer")
+        clear.clicked.connect(lambda: self.output.clear())
+        for b in (self.run_btn, self.stop_btn, copy):
+            actions.addWidget(b)
+        actions.addStretch(1)
+        actions.addWidget(clear)
+        ml.addLayout(actions)
+
+        self.output = QPlainTextEdit(objectName="output")
+        self.output.setReadOnly(True)
+        self.output.setFont(mono)
+        self.output.setMaximumBlockCount(20000)
+        ml.addWidget(self.output, 1)
+        self.status = QLabel(objectName="muted")
+        ml.addWidget(self.status)
+        split.addWidget(main)
+        split.setSizes([300, 880])
+        self.set_enabled(False)
+
+    def populate(self):
+        self.tree.clear()
+        for cat in self.categories:
+            ci = QTreeWidgetItem([cat["name"]])
+            ci.setFlags(Qt.ItemFlag.ItemIsEnabled)
+            f = ci.font(0)
+            f.setBold(True)
+            ci.setFont(0, f)
+            self.tree.addTopLevelItem(ci)
             for tool in cat["tools"]:
-                t_item = QListWidgetItem(f"   {tool['name']}")
-                t_item.setData(Qt.UserRole, tool)
-                self.tool_list.addItem(t_item)
-    
-    def on_tool_selected(self, item):
-        self.clear_layout(self.params_layout)
-        tool = item.data(Qt.UserRole)
+                runner, ok, why = self.runners.resolve(tool)
+                ti = QTreeWidgetItem([tool["name"]])
+                ti.setData(0, Qt.ItemDataRole.UserRole, tool)
+                ti.setToolTip(0, why or f"{tool['description']} ({RUNNER_LABEL[runner]})")
+                if not ok:
+                    ti.setForeground(0, QBrush(QColor("#6B6B74")))
+                ci.addChild(ti)
+            ci.setExpanded(True)
+        self.kali_state.setText(
+            "Kali isolée : prête" if self.runners.kali else "Kali isolée : absente (labnoir-redteam init)"
+        )
+
+    def filter(self, text):
+        text = text.strip().lower()
+        for i in range(self.tree.topLevelItemCount()):
+            cat = self.tree.topLevelItem(i)
+            visible = 0
+            for j in range(cat.childCount()):
+                child = cat.child(j)
+                tool = child.data(0, Qt.ItemDataRole.UserRole)
+                hit = not text or text in tool["name"].lower() or text in tool["description"].lower()
+                child.setHidden(not hit)
+                visible += hit
+            cat.setHidden(visible == 0)
+
+    def refresh_runners(self):
+        current = self.tool["id"] if self.tool else None
+        self.runners.refresh()
+        self.populate()
+        self.filter(self.search.text())
+        if current:
+            for i in range(self.tree.topLevelItemCount()):
+                cat = self.tree.topLevelItem(i)
+                for j in range(cat.childCount()):
+                    if cat.child(j).data(0, Qt.ItemDataRole.UserRole)["id"] == current:
+                        self.tree.setCurrentItem(cat.child(j))
+
+    def set_enabled(self, on):
+        self.run_btn.setEnabled(on and self.proc is None)
+
+    # [ARS-10]
+    def select(self, item, _prev=None):
+        tool = item.data(0, Qt.ItemDataRole.UserRole) if item else None
         if not tool:
             return
-        self.current_tool = tool
-        self.desc_label.setText(f"{tool['name']} — {tool['description']}")
-        
-        self.inputs = {}
-        self.params_widgets = []
-        for param in tool["params"]:
-            if param["type"] == "text":
-                field = QLineEdit()
-                field.setPlaceholderText(param.get("placeholder", ""))
-                if "default" in param:
-                    field.setText(param["default"])
-                self.params_layout.addRow(QLabel(param["label"]), field)
-                self.inputs[param["id"]] = field
-                self.params_widgets.append(field)
-            elif param["type"] == "dropdown":
-                combo = QComboBox()
-                combo.addItems(param["options"])
-                default = param.get("default")
-                if default and default in param["options"]:
-                    combo.setCurrentText(default)
-                self.params_layout.addRow(QLabel(param["label"]), combo)
-                self.inputs[param["id"]] = combo
-                self.params_widgets.append(combo)
-            elif param["type"] == "checkbox":
-                check = QCheckBox(param["label"])
-                check.setStyleSheet("color: #C0C0C0;")
-                if param.get("default", False):
-                    check.setChecked(True)
-                self.params_layout.addRow("", check)
-                self.inputs[param["id"]] = check
-                self.params_widgets.append(check)
-    
-    def clear_layout(self, layout):
-        while layout.count():
-            child = layout.takeAt(0)
-            if child.widget():
-                child.widget().deleteLater()
-        self.inputs = {}
-        self.params_widgets = []
-    
-    def is_widget_valid(self, widget):
-        """Vérifie si un widget Qt est encore valide."""
-        try:
-            # Tester si le widget existe encore
-            widget.objectName()
-            return True
-        except RuntimeError:
-            return False
-    
-    def execute_tool(self):
-        if not self.current_tool:
+        self.tool = tool
+        runner, ok, why = self.runners.resolve(tool)
+        self.name.setText(tool["name"])
+        self.desc.setText(tool["description"])
+        self.badge.setText(RUNNER_LABEL[runner] + (" · terminal" if tool.get("terminal") else ""))
+        self.badge.show()
+        self.warning.setText(why)
+        self.warning.setVisible(bool(why))
+        self.form.build(tool)
+        self.set_enabled(ok)
+        self.update_preview()
+
+    def update_preview(self, *_):
+        if not self.tool:
             return
-        
-        # Vérifier que tous les widgets sont encore valides
-        for widget in self.params_widgets:
-            if not self.is_widget_valid(widget):
-                self.output_area.append("[ERREUR] Les paramètres ont été modifiés. Veuillez resélectionner l'outil.")
-                return
-        
-        tool = self.current_tool
-        command = tool["command"]
-        args = []
-        
-        for param in tool["params"]:
-            widget = self.inputs.get(param["id"])
-            if not widget or not self.is_widget_valid(widget):
-                self.output_area.append(f"[ERREUR] Paramètre '{param['label']}' invalide.")
-                return
-            
-            if param["type"] == "text":
-                val = widget.text().strip()
-                if val:
-                    args.append(val)
-            elif param["type"] == "dropdown":
-                val = widget.currentText()
-                if " (" in val:
-                    val = val.split(" ")[0]
-                args.append(val)
-            elif param["type"] == "checkbox":
-                if widget.isChecked():
-                    args.append(param.get("option", ""))
-        
-        args = [a for a in args if a and a != ""]
-        full_cmd = [command] + args
-        
-        self.output_area.append(f"\n$ {' '.join(full_cmd)}\n")
-        self.output_area.append("-" * 60)
-        
+        runner, _, _ = self.runners.resolve(self.tool)
         try:
-            result = subprocess.run(
-                full_cmd,
-                capture_output=True,
-                text=True,
-                timeout=300,
-                check=False
-            )
-            self.output_area.append(result.stdout)
-            if result.stderr:
-                self.output_area.append(f"[STDERR]\n{result.stderr}")
-            if result.returncode != 0:
-                self.output_area.append(f"[CODE] Retour : {result.returncode}")
-        except subprocess.TimeoutExpired:
-            self.output_area.append("[ERREUR] Temps d'exécution dépassé (5 min)")
-        except Exception as e:
-            self.output_area.append(f"[ERREUR] {str(e)}")
-        
-        self.output_area.verticalScrollBar().setValue(
-            self.output_area.verticalScrollBar().maximum()
-        )
-    
-    def load_styles(self):
-        base_dir = os.path.dirname(os.path.abspath(__file__))
-        style_path = os.path.join(base_dir, "style.qss")
-        if os.path.exists(style_path):
-            with open(style_path, "r") as f:
-                self.setStyleSheet(f.read())
+            cmd = full_command(self.tool, runner, build_args(self.tool, self.form.values()))
+            self.preview.setText(shlex.join(cmd))
+            self.preview.setProperty("invalid", False)
+        except ValueError as e:
+            self.preview.setText(str(e))
+            self.preview.setProperty("invalid", True)
+        self.preview.style().unpolish(self.preview)
+        self.preview.style().polish(self.preview)
+
+    # [ARS-11]
+    def run(self):
+        if not self.tool or self.proc:
+            return
+        runner, ok, why = self.runners.resolve(self.tool)
+        if not ok:
+            self.status.setText(why)
+            return
+        try:
+            cmd = full_command(self.tool, runner, build_args(self.tool, self.form.values()))
+        except ValueError as e:
+            self.status.setText(str(e))
+            return
+        self.output.appendPlainText(f"$ {shlex.join(cmd)}")
+        if self.tool.get("terminal") or self.tool.get("sudo"):
+            term = terminal_command(cmd)
+            if not term:
+                self.status.setText("Aucun terminal trouvé (konsole)")
+                return
+            QProcess.startDetached(term[0], term[1:])
+            self.status.setText("Lancé dans un terminal.")
+            return
+        self.output.appendPlainText("")
+        self.proc = QProcess(self)
+        self.proc.setProcessChannelMode(QProcess.ProcessChannelMode.MergedChannels)
+        self.proc.readyReadStandardOutput.connect(self.read_output)
+        self.proc.finished.connect(self.finished)
+        self.proc.errorOccurred.connect(self.failed)
+        self.proc.start(cmd[0], cmd[1:])
+        self.run_btn.setEnabled(False)
+        self.stop_btn.setEnabled(True)
+        self.status.setText("En cours…")
+
+    def read_output(self):
+        data = bytes(self.proc.readAllStandardOutput()).decode("utf-8", "replace")
+        self.output.moveCursor(QTextCursor.MoveOperation.End)
+        self.output.insertPlainText(data)
+        self.output.moveCursor(QTextCursor.MoveOperation.End)
+
+    def finished(self, code, status):
+        crashed = status == QProcess.ExitStatus.CrashExit
+        self.output.appendPlainText(f"[terminé : {'interrompu' if crashed else f'code {code}'}]\n")
+        self.status.setText("Interrompu." if crashed else f"Terminé (code {code}).")
+        self.proc = None
+        self.stop_btn.setEnabled(False)
+        self.set_enabled(self.tool is not None and self.runners.resolve(self.tool)[1])
+
+    def failed(self, err):
+        if err == QProcess.ProcessError.FailedToStart:
+            self.output.appendPlainText("[impossible de lancer la commande]\n")
+            self.proc = None
+            self.stop_btn.setEnabled(False)
+            self.set_enabled(True)
+
+    def stop(self):
+        if self.proc:
+            self.proc.terminate()
+            QTimer.singleShot(3000, lambda: self.proc and self.proc.kill())
+
+    def closeEvent(self, e):
+        if self.proc:
+            self.proc.kill()
+            self.proc.waitForFinished(2000)
+        super().closeEvent(e)
+
+
+# [ARS-12]
+def main():
+    app = QApplication(sys.argv)
+    app.setApplicationName("Arsenal")
+    app.setDesktopFileName("labnoir-arsenal")
+    app.setStyle("Fusion")
+    if STYLE.exists():
+        app.setStyleSheet(STYLE.read_text(encoding="utf-8").replace("#FF1654", theme_accent()))
+    app.setFont(QFont("Inter", 10))
+    w = Arsenal()
+    w.show()
+    return app.exec()
+
 
 if __name__ == "__main__":
-    app = QApplication(sys.argv)
-    app.setStyle("Fusion")
-    window = ArsenalLauncher()
-    window.show()
-    sys.exit(app.exec_())
+    sys.exit(main())

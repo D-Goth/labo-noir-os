@@ -1,0 +1,103 @@
+#!/usr/bin/env bash
+set -uo pipefail
+
+# [RED-02]
+BOX="${LABNOIR_KALI_BOX:-kali}"
+IMAGE="${LABNOIR_KALI_IMAGE:-docker.io/kalilinux/kali-rolling:latest}"
+
+say() { printf '  %s %s\n' "$1" "$2"; }
+need() { command -v "$1" >/dev/null 2>&1 || { say "✗" "$1 absent : sudo apt install $2"; exit 1; }; }
+box_exists() { distrobox list 2>/dev/null | awk -F'|' 'NR>1 {gsub(/ /,"",$2); print $2}' | grep -qx "$BOX"; }
+not_root() { [[ $EUID -ne 0 ]] || { say "✗" "à lancer depuis ton compte, sans sudo"; exit 1; }; }
+
+# [RED-03]
+cmd_init() {
+    not_root
+    need distrobox distrobox
+    need podman podman
+    local meta="kali-tools-top10"
+    case "${1:-}" in
+        --full) meta="kali-linux-headless" ;;
+        --large) meta="kali-linux-large" ;;
+        "") ;;
+        *) say "✗" "option inconnue : $1"; exit 2 ;;
+    esac
+    if box_exists; then
+        say "·" "le conteneur « $BOX » existe déjà"
+    else
+        say "·" "création du conteneur « $BOX » ($IMAGE)"
+        distrobox create --yes --name "$BOX" --image "$IMAGE" || exit 1
+    fi
+    say "·" "installation des outils Kali ($meta)"
+    distrobox enter "$BOX" -- sudo env DEBIAN_FRONTEND=noninteractive apt-get update -q || exit 1
+    distrobox enter "$BOX" -- sudo env DEBIAN_FRONTEND=noninteractive apt-get install -y -q "$meta" || exit 1
+    say "✓" "Kali prête : « labnoir-redteam enter » pour y entrer, ou depuis Arsenal"
+}
+
+# [RED-04]
+cmd_vm() {
+    local ok=1
+    if [[ -e /dev/kvm ]]; then
+        say "✓" "KVM disponible"
+    else
+        say "!" "/dev/kvm absent : active VT-x / AMD-V dans le BIOS"
+        ok=0
+    fi
+    if command -v virt-manager >/dev/null 2>&1; then
+        say "✓" "virt-manager installé"
+    else
+        say "!" "virt-manager absent : sudo ./install.sh --only virtualisation"
+        ok=0
+    fi
+    if id -nG | grep -qw libvirt; then
+        say "✓" "compte dans le groupe libvirt"
+    else
+        say "!" "groupe libvirt manquant : reconnecte-toi après l'installation"
+        ok=0
+    fi
+    say "·" "images Kali officielles pour QEMU : https://www.kali.org/get-kali/#kali-virtual-machines"
+    say "·" "pense aux instantanés avant chaque analyse de logiciel malveillant"
+    if ((ok)); then
+        virt-manager >/dev/null 2>&1 &
+        disown
+    fi
+    return 0
+}
+
+# [RED-05]
+cmd_status() {
+    if ! command -v distrobox >/dev/null 2>&1; then
+        say "!" "distrobox absent"
+        return 1
+    fi
+    if box_exists; then
+        say "✓" "conteneur « $BOX » présent"
+    else
+        say "·" "conteneur « $BOX » absent : « labnoir-redteam init »"
+        return 1
+    fi
+}
+
+usage() {
+    cat <<USAGE
+Usage : labnoir-redteam <commande>
+
+  init [--full|--large]  crée la Kali isolée (top 10 des outils ; --full : headless ; --large : complète)
+  enter                  ouvre un terminal dans la Kali
+  run CMD [ARGS…]        lance une commande dans la Kali
+  status                 état du conteneur
+  vm                     vérifie la virtualisation et ouvre virt-manager
+  remove                 supprime le conteneur Kali
+USAGE
+}
+
+case "${1:-}" in
+    init) shift; cmd_init "$@" ;;
+    enter) not_root; need distrobox distrobox; exec distrobox enter "$BOX" ;;
+    run) shift; not_root; need distrobox distrobox; exec distrobox enter "$BOX" -- "$@" ;;
+    status) cmd_status ;;
+    vm) cmd_vm ;;
+    remove) not_root; need distrobox distrobox; distrobox rm --force "$BOX" ;;
+    -h | --help | "") usage ;;
+    *) say "✗" "commande inconnue : $1"; usage; exit 2 ;;
+esac

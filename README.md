@@ -1,37 +1,77 @@
-# 🖤 Lab'O Noir OS
+# Lab'O Noir OS
 
-**Forge your own shadow.**
+Un poste de travail Debian sobre et soigné pour les développeurs et la cyberdéfense.
 
-Lab'O Noir OS est une surcouche Debian 12 + KDE Plasma pensée pour les architectes, les devs et les cyberstratèges. 
-Il intègre un lanceur d'outils unifié, une charte graphique noir/#FF1654, et un écosystème modulaire.
+Lab'O Noir s'installe par-dessus une **Debian 13 avec KDE Plasma 6** : un bureau épuré façon elementary OS,
+avec verre dépoli et thèmes à la carte, les outils de défense sur le système, les outils offensifs isolés
+dans une Kali en conteneur ou en machine virtuelle, une messagerie sans inscription, et aucun recueil de
+date de naissance ni de télémétrie.
 
----
+![Arsenal](docs/img/arsenal.png)
 
-## 📦 Contenu
+## Ce que contient Lab'O Noir
 
-- **Arsenal** : Lanceur PyQt5 pour outils Kali/Parrot (Nmap, Hydra, SQLMap, etc.)
-- **Dotfiles** : Configurations bash/zsh personnalisées
-- **Wrappers** : Scripts GUI pour outils complexes
-- **Assets** : Logos et icônes Lab'O Noir
+| Module | Contenu |
+|---|---|
+| `base` | Outils de base, Flathub, commandes `labnoir-*` |
+| `confidentialite` | Pas de popularity-contest, retours d'usage de KDE coupés, garde-fou contre le service de vérification d'âge, `labnoir-privacy` |
+| `bureau` | Plasma 6 : barre fine en haut, dock flottant, verre dépoli, thème Lab'O Noir, Konsole translucide, écran de connexion assorti |
+| `dev` | Compilateurs, Python, Node, Go, Rust (rustup), Podman, Distrobox, Kate, Neovim, VSCodium |
+| `defense` | Wireshark, Suricata, YARA, ClamAV, rkhunter, Lynis, AIDE, auditd, Sleuth Kit, Volatility 3… |
+| `redteam` | Kali officielle isolée dans un conteneur Distrobox, `labnoir-redteam` |
+| `virtualisation` | QEMU/KVM et virt-manager pour les VM d'attaque et d'analyse de logiciels malveillants |
+| `messagerie` | SimpleX Chat (aucun identifiant) et Briar (Tor, Wi-Fi, Bluetooth) |
+| `arsenal` | Lanceur graphique des outils, sur le système ou dans la Kali |
+| `orbit` | Orbit Pixel : modules circulaires pour le bureau |
+| `durcissement` | Pare-feu, noyau durci, mises à jour de sécurité automatiques, SSH |
 
----
+## Installation
 
-## 📄 Licence
-
-Ce projet est protégé par la licence **Creative Commons Attribution — Pas d'Utilisation Commerciale 4.0 International (CC BY-NC 4.0)**.
-
-- Vous pouvez utiliser, modifier et partager ce projet à des fins **non commerciales**.
-- Vous devez **créditer l'auteur** (Loïc / D-Goth / Lab'O Noir).
-- Toute utilisation commerciale nécessite une autorisation explicite.
-
-> 📌 Le code source (scripts Python/Bash) est fourni à titre éducatif et fonctionnel, mais l'identité visuelle (logos, thèmes, charte #FF1654) reste la propriété exclusive de l'auteur.
-
----
-
-## 🚀 Installation
+1. Installe **Debian 13** en choisissant l'environnement **KDE Plasma** (ou ajoute-le ensuite avec `sudo apt install task-kde-desktop`).
+2. Depuis ta session :
 
 ```bash
 git clone https://github.com/D-Goth/labo-noir-os.git
 cd labo-noir-os
-chmod +x install.sh
-sudo ./install.sh
+./install.sh --list              # les modules
+sudo ./install.sh --dry-run      # ce qui serait fait, sans rien toucher
+sudo ./install.sh                # installation complète
+```
+
+3. Ferme puis rouvre ta session : le bureau Lab'O Noir s'applique à la première connexion.
+
+Options utiles : `--only bureau,arsenal`, `--skip redteam,virtualisation`, `--user NOM`, `--yes`.
+Le journal est dans `/var/log/labnoir-install.log`. Un paquet absent des dépôts est signalé dans le bilan sans arrêter l'installation.
+
+## Au quotidien
+
+| Commande | Rôle |
+|---|---|
+| `labnoir-theme list` | Thèmes disponibles (`labonoir`, `nuit-bleue`, `givre`) |
+| `labnoir-theme apply nuit-bleue` | Change d'accent, de flou, de boutons de fenêtres, de fond, et Orbit Pixel suit |
+| `labnoir-redteam init` | Crée la Kali isolée (top 10 des outils ; `--full` ou `--large` pour plus) |
+| `labnoir-redteam enter` | Terminal dans la Kali |
+| `labnoir-redteam vm` | Vérifie la virtualisation et ouvre virt-manager |
+| `labnoir-privacy` | Vérifie : pas de date de naissance, pas de service d'âge, pas de télémétrie |
+| `arsenal` | Lanceur graphique des outils |
+
+Un thème est un petit fichier TOML : copie `themes/labonoir.toml` dans `~/.local/share/labnoir/themes/`,
+renomme-le, change l'accent ou le flou, puis `labnoir-theme apply ton-theme`.
+
+## Confidentialité
+
+Lab'O Noir ne demande jamais de date de naissance et n'installe aucun service de vérification d'âge :
+un réglage D-Bus empêche même un tel service (`org.freedesktop.AgeVerification1`) de s'enregistrer.
+`labnoir-privacy` le vérifie à tout moment. Ces lois visent pour l'instant certains États américains et le
+Brésil ; si tu redistribues Lab'O Noir, vérifie les règles qui s'appliquent là où il sera utilisé.
+
+## Documentation
+
+- [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) : organisation du dépôt et choix techniques
+- [docs/NOMENCLATURE.md](docs/NOMENCLATURE.md) : chaque code de référence du code, avec sa définition
+- [ROADMAP.md](ROADMAP.md) : la suite (ISO, studio de thèmes, client bitchat…)
+
+## Licence
+
+Le code est sous **GPL-3.0** ([LICENSE](LICENSE)). Le nom Lab'O Noir, les logos, le fond d'écran et la
+charte graphique restent réservés : voir [BRANDING.md](BRANDING.md).

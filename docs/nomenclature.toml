@@ -1,0 +1,301 @@
+[prefixes]
+INS = "Installateur principal (install.sh)"
+LIB = "Bibliothèque commune des modules (lib/common.sh)"
+BAS = "Module base"
+PRV = "Confidentialité : module et outil labnoir-privacy"
+DSK = "Bureau : module, look-and-feel Plasma, première connexion"
+THM = "Gestionnaire de thèmes labnoir-theme"
+DEV = "Module développement"
+DEF = "Module défense"
+RED = "Red team : module et outil labnoir-redteam"
+VIR = "Module virtualisation"
+MSG = "Module messagerie"
+ARS = "Arsenal, lanceur graphique des outils"
+ORB = "Module Orbit Pixel"
+HRD = "Module durcissement"
+OUT = "Outils du dépôt (vérifications, CI)"
+
+
+[codes.INS-01]
+titre = "Démarrage"
+definition = "Repère le dossier du dépôt, charge la bibliothèque commune et prépare les options."
+
+[codes.INS-02]
+titre = "Options"
+definition = "Aide et lecture des options : --list, --only, --skip, --user, --dry-run, --yes, --force."
+
+[codes.INS-03]
+titre = "Modules"
+definition = "Découverte des modules (modules/NN-nom.sh), identifiant, description, modules facultatifs, sélection et vérification des noms demandés."
+
+[codes.INS-04]
+titre = "Vérifications"
+definition = "Droits root (sauf simulation), système Debian 13 (ou --force), compte à personnaliser, résumé et confirmation."
+
+[codes.INS-05]
+titre = "Exécution"
+definition = "Journal en 600, mise à jour unique de l'index apt, puis chaque module dans un sous-shell avec set -e : l'échec d'un module n'arrête pas les autres."
+
+[codes.INS-06]
+titre = "Bilan"
+definition = "Modules terminés, en échec, paquets introuvables, emplacement du journal ; code de sortie non nul si un module a échoué."
+
+[codes.LIB-01]
+titre = "Chemins et réglages"
+definition = "Dossier du dépôt, préfixe /opt/labnoir, /etc/labnoir, journal, mode simulation, fichier des paquets manquants."
+
+[codes.LIB-02]
+titre = "Affichage et journal"
+definition = "Messages étape, info, ok, avertissement et erreur fatale ; couleurs seulement dans un terminal ; tout est copié dans le journal."
+
+[codes.LIB-03]
+titre = "Exécution d'une commande"
+definition = "Lance la commande et la note dans le journal, ou se contente de l'afficher en simulation."
+
+[codes.LIB-04]
+titre = "Lecture d'une liste de paquets"
+definition = "Lit packages/<nom>.list en ignorant les lignes vides."
+
+[codes.LIB-05]
+titre = "Installation apt"
+definition = "Mise à jour unique de l'index, tri entre paquets disponibles et absents (signalés et comptés dans le bilan), installation sans paquets recommandés."
+
+[codes.LIB-06]
+titre = "Compte cible"
+definition = "Compte à personnaliser : --user, sinon celui qui a lancé sudo, sinon le premier compte humain ; et son dossier personnel."
+
+[codes.LIB-07]
+titre = "Commande en tant qu'utilisateur"
+definition = "Lance une commande sous le compte cible avec son bus de session, pour rustup, pipx ou la Kali isolée."
+
+[codes.LIB-08]
+titre = "Copie de fichiers"
+definition = "Copie d'un fichier avec droits, d'un dossier, et lien d'un outil dans /usr/local/bin."
+
+[codes.LIB-09]
+titre = "Flatpak"
+definition = "Ajoute Flathub si besoin et installe des applications pour tout le système, sans réinstaller celles déjà présentes."
+
+[codes.LIB-10]
+titre = "Système détecté"
+definition = "Lit /etc/os-release et teste Debian 13."
+
+[codes.LIB-11]
+titre = "Réglages Lab'O Noir"
+definition = "Écrit et lit les clés de /etc/labnoir/labnoir.conf (version, compte, thème, Orbit Pixel…)."
+
+[codes.BAS-01]
+titre = "Module base"
+definition = "Outils de base, Flathub, copie des outils, thèmes et ressources dans /opt/labnoir, liens des commandes labnoir-*, réglages initiaux."
+
+[codes.PRV-01]
+titre = "Module confidentialité"
+definition = "Retire popularity-contest, installe le garde-fou D-Bus contre le service d'âge, désactive par défaut les retours d'usage de KDE, puis lance une vérification."
+
+[codes.PRV-02]
+titre = "labnoir-privacy"
+definition = "Outil de vérification de la confidentialité : nom du service d'âge surveillé et emplacement du garde-fou."
+
+[codes.PRV-03]
+titre = "Dates de naissance"
+definition = "Cherche un champ birthDate dans les fiches utilisateurs de systemd (userdbctl)."
+
+[codes.PRV-04]
+titre = "Service d'âge"
+definition = "Cherche un service ou un portail AgeVerification dans les fichiers D-Bus et xdg-desktop-portal, et vérifie que le garde-fou est en place."
+
+[codes.PRV-05]
+titre = "Télémétrie"
+definition = "Vérifie que popularity-contest n'est pas installé."
+
+[codes.PRV-06]
+titre = "Effacement des dates de naissance"
+definition = "Retire le champ birthDate des fiches /etc/userdb (sudo, avec jq)."
+
+[codes.DSK-01]
+titre = "Module bureau"
+definition = "Paquets Plasma, look-and-feel Lab'O Noir, fond d'écran, icône, puis réglages par défaut, SDDM et première connexion."
+
+[codes.DSK-02]
+titre = "Couleurs par défaut"
+definition = "Génère le jeu de couleurs et le thème du terminal du thème choisi, et installe le profil Konsole."
+
+[codes.DSK-03]
+titre = "Réglages par défaut du système"
+definition = "kdeglobals, kwinrc (flou, bordures, boutons), konsolerc et plasmarc dans /etc/xdg : ils valent pour tout nouveau compte."
+
+[codes.DSK-04]
+titre = "Écran de connexion"
+definition = "SDDM avec le thème Breeze et le fond Lab'O Noir."
+
+[codes.DSK-05]
+titre = "Première connexion"
+definition = "Installe le lanceur automatique et remet à zéro le marqueur du compte cible pour réappliquer le bureau."
+
+[codes.DSK-06]
+titre = "Fond d'écran"
+definition = "Image Lab'O Noir sur tous les bureaux de l'activité."
+
+[codes.DSK-07]
+titre = "Barre du haut"
+definition = "Barre fine : menu des applications, menu global de l'application active, horloge centrée avec la date, zone de notification."
+
+[codes.DSK-08]
+titre = "Dock"
+definition = "Panneau flottant centré, à la taille de son contenu, qui s'efface devant les fenêtres, avec les lanceurs favoris."
+
+[codes.DSK-09]
+titre = "labnoir-first-login"
+definition = "Une seule fois par compte : applique le look-and-feel avec sa disposition, le thème choisi, puis la disposition Orbit Pixel si elle est activée ; journal dans ~/.config/labnoir."
+
+[codes.THM-01]
+titre = "Emplacements"
+definition = "Thèmes et fonds cherchés dans ~/.local/share/labnoir, /opt/labnoir puis le dépôt ; fichier du thème actif."
+
+[codes.THM-02]
+titre = "Boutons des fenêtres"
+definition = "Dispositions elementary (fermer à gauche, agrandir à droite), macos (tout à gauche) et classique."
+
+[codes.THM-03]
+titre = "Thème"
+definition = "Nom, mode sombre ou clair, accent, flou et bruit du verre dépoli, opacité du terminal, boutons, fond d'écran, transparence d'Orbit Pixel."
+
+[codes.THM-04]
+titre = "Chargement d'un thème"
+definition = "Lit le fichier TOML, vérifie l'accent (#RRGGBB), le mode et les boutons, borne les valeurs."
+
+[codes.THM-05]
+titre = "Outils de couleur"
+definition = "Conversion hexadécimale, mélange de deux couleurs, format KDE et luminance."
+
+[codes.THM-06]
+titre = "Jeu de couleurs KDE"
+definition = "Palettes sombre et claire, et génération du fichier .colors avec l'accent (sélection, liens, focus) et un texte de sélection lisible."
+
+[codes.THM-07]
+titre = "Thème du terminal"
+definition = "Couleurs Konsole assorties, accent en rouge ANSI, opacité et flou."
+
+[codes.THM-08]
+titre = "Outils KDE"
+definition = "Recherche des outils KDE, lecture et écriture de réglages, écriture atomique de fichiers, compte rendu."
+
+[codes.THM-09]
+titre = "Application"
+definition = "Couleurs (en alternant deux noms pour forcer Plasma à recharger), icônes, terminal, flou et boutons de KWin, fond d'écran, accent et transparence d'Orbit Pixel, mémorisation du thème."
+
+[codes.THM-10]
+titre = "Commandes"
+definition = "list, current, apply (depuis la session) et render (pour l'installateur)."
+
+[codes.DEV-01]
+titre = "Module développement"
+definition = "Compilateurs, Python, Node, Go, rustup, Podman, Distrobox, éditeurs ; chaîne Rust stable pour le compte cible ; VSCodium depuis Flathub."
+
+[codes.DEF-01]
+titre = "Module défense"
+definition = "Wireshark sans root pour le compte cible, outils de détection, d'audit et de forensic, Volatility 3 via pipx, mise à jour de ClamAV."
+
+[codes.RED-01]
+titre = "Module red team"
+definition = "Podman et Distrobox, puis création de la Kali isolée pour le compte cible (LABNOIR_REDTEAM_INIT=0 pour la reporter)."
+
+[codes.RED-02]
+titre = "labnoir-redteam"
+definition = "Nom du conteneur, image Kali officielle et contrôles communs (outil présent, conteneur existant, pas de sudo)."
+
+[codes.RED-03]
+titre = "Création de la Kali"
+definition = "Crée le conteneur et installe kali-tools-top10, kali-linux-headless (--full) ou kali-linux-large (--large)."
+
+[codes.RED-04]
+titre = "Vérification des VM"
+definition = "KVM, virt-manager, groupe libvirt, lien vers les images Kali officielles, rappel des instantanés, puis ouverture de virt-manager."
+
+[codes.RED-05]
+titre = "État"
+definition = "Indique si Distrobox et le conteneur Kali sont présents."
+
+[codes.VIR-01]
+titre = "Module virtualisation"
+definition = "QEMU/KVM, libvirt et virt-manager, compte cible ajouté aux groupes libvirt et kvm, avertissement si la virtualisation matérielle est désactivée."
+
+[codes.MSG-01]
+titre = "Module messagerie"
+definition = "SimpleX Chat (aucun identifiant) et Briar (Tor, Wi-Fi, Bluetooth) depuis Flathub."
+
+[codes.ARS-01]
+titre = "Module Arsenal"
+definition = "PyQt6, copie d'Arsenal dans /opt/labnoir, commande arsenal et entrée du menu."
+
+[codes.ARS-02]
+titre = "Chemins"
+definition = "Fichiers d'Arsenal, nom du conteneur Kali, emplacements des thèmes, libellés des environnements."
+
+[codes.ARS-03]
+titre = "Catalogue d'outils"
+definition = "Lit tools.json (catégories, outils, paramètres)."
+
+[codes.ARS-04]
+titre = "Accent du thème"
+definition = "Couleur d'accent du thème Lab'O Noir actif, appliquée à la feuille de style."
+
+[codes.ARS-05]
+titre = "Environnements"
+definition = "Présence de Distrobox et de la Kali isolée ; pour chaque outil : système, Kali ou automatique (système si l'outil y est installé), disponibilité et raison."
+
+[codes.ARS-06]
+titre = "Construction de la commande"
+definition = "Arguments dans l'ordre des paramètres (case, choix, texte avec option, préfixe ou position), champs obligatoires, ~ développé ; sudo et passage par la Kali. Aucun shell : une saisie reste un seul argument."
+
+[codes.ARS-07]
+titre = "Terminal"
+definition = "Konsole (fenêtre gardée ouverte) ou terminal par défaut pour les outils interactifs ou qui demandent sudo."
+
+[codes.ARS-08]
+titre = "Formulaire"
+definition = "Champs générés depuis les paramètres de l'outil, valeurs par défaut, mise à jour de l'aperçu à chaque saisie."
+
+[codes.ARS-09]
+titre = "Fenêtre principale"
+definition = "Recherche, liste des outils (grisés s'ils sont indisponibles), état de la Kali, fiche de l'outil, aperçu de la commande, boutons et sortie."
+
+[codes.ARS-10]
+titre = "Choix d'un outil"
+definition = "Affiche la fiche, l'environnement, l'avertissement éventuel et le formulaire ; aperçu de la commande exacte."
+
+[codes.ARS-11]
+titre = "Exécution"
+definition = "Lance l'outil dans un terminal ou avec QProcess (sortie en direct, arrêt propre puis forcé après 3 s, code de retour)."
+
+[codes.ARS-12]
+titre = "Lancement"
+definition = "Application Qt, style, police et feuille de style à l'accent du thème."
+
+[codes.ORB-01]
+titre = "Module Orbit Pixel"
+definition = "Dépendances, installation du widget pour tout le système, script de disposition et réglage ORBIT_LAYOUT."
+
+[codes.HRD-01]
+titre = "Module durcissement"
+definition = "Paquets, pare-feu, noyau, mises à jour, SSH et vérification d'AppArmor."
+
+[codes.HRD-02]
+titre = "Pare-feu"
+definition = "ufw : entrées refusées, sorties permises ; SSH laissé ouvert si l'installation passe par SSH."
+
+[codes.HRD-03]
+titre = "Noyau"
+definition = "sysctl : pointeurs et journaux du noyau masqués, BPF non privilégié coupé, ptrace restreint, redirections et routage source refusés, filtrage de chemin inverse."
+
+[codes.HRD-04]
+titre = "Mises à jour"
+definition = "Mises à jour de sécurité automatiques chaque jour."
+
+[codes.HRD-05]
+titre = "SSH"
+definition = "Si un serveur SSH est présent : root interdit, tentatives limitées, fail2ban."
+
+[codes.OUT-01]
+titre = "Vérification des paquets"
+definition = "Vérifie que chaque paquet des listes existe dans les dépôts du système ; utilisée par la CI sur Debian 13."

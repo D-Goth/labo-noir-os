@@ -1,0 +1,90 @@
+#!/usr/bin/env bash
+set -uo pipefail
+
+# [PRV-02]
+AGE_NAME="org.freedesktop.AgeVerification1"
+POLICY="/etc/dbus-1/system.d/labnoir-age.conf"
+status=0
+
+say() { printf '  %s %s\n' "$1" "$2"; }
+
+# [PRV-03]
+check_userdb() {
+    if ! command -v userdbctl >/dev/null 2>&1; then
+        say "·" "userdb absent : aucune date de naissance stockée par systemd"
+        return
+    fi
+    local found
+    found="$(userdbctl user --output=json 2>/dev/null | grep -o '"birthDate"[^,}]*' || true)"
+    if [[ -n "$found" ]]; then
+        say "!" "date(s) de naissance présentes dans les fiches utilisateurs :"
+        printf '      %s\n' "$found"
+        say " " "« sudo labnoir-privacy clear » les retire des fiches de /etc/userdb"
+        status=1
+    else
+        say "✓" "aucune date de naissance dans les fiches utilisateurs"
+    fi
+}
+
+# [PRV-04]
+check_age_service() {
+    local hits
+    hits="$(grep -rlis "AgeVerification" /usr/share/dbus-1 /usr/share/xdg-desktop-portal /etc/xdg-desktop-portal 2>/dev/null || true)"
+    if [[ -n "$hits" ]]; then
+        say "!" "service de vérification d'âge présent :"
+        printf '      %s\n' "$hits"
+        status=1
+    else
+        say "✓" "aucun service de vérification d'âge installé"
+    fi
+    if [[ -f "$POLICY" ]]; then
+        say "✓" "garde-fou actif : $AGE_NAME ne peut pas s'enregistrer sur le bus système"
+    else
+        say "!" "garde-fou absent ($POLICY)"
+        status=1
+    fi
+}
+
+# [PRV-05]
+check_telemetry() {
+    if dpkg -s popularity-contest >/dev/null 2>&1; then
+        say "!" "popularity-contest installé (statistiques d'usage envoyées à Debian)"
+        status=1
+    else
+        say "✓" "popularity-contest absent"
+    fi
+}
+
+# [PRV-06]
+clear_birthdates() {
+    [[ $EUID -eq 0 ]] || { echo "à lancer avec sudo" >&2; exit 1; }
+    command -v jq >/dev/null 2>&1 || { echo "jq requis : sudo apt install jq" >&2; exit 1; }
+    local f n=0
+    for f in /etc/userdb/*.user; do
+        [[ -f "$f" ]] || continue
+        if jq -e 'has("birthDate")' "$f" >/dev/null 2>&1; then
+            jq 'del(.birthDate)' "$f" >"$f.tmp" && mv "$f.tmp" "$f"
+            say "✓" "retirée de $f"
+            n=$((n + 1))
+        fi
+    done
+    ((n)) || say "·" "aucune date de naissance dans /etc/userdb"
+    say "·" "pour un compte géré par homectl : homectl update NOM puis retirer le champ birthDate"
+}
+
+case "${1:-check}" in
+    check)
+        echo "Confidentialité de Lab'O Noir"
+        check_userdb
+        check_age_service
+        check_telemetry
+        exit "$status"
+        ;;
+    clear) clear_birthdates ;;
+    -h | --help)
+        echo "Usage : labnoir-privacy [check|clear]"
+        echo "  check  vérifie l'absence de date de naissance, de service d'âge et de télémétrie"
+        echo "  clear  retire les dates de naissance des fiches /etc/userdb (sudo)"
+        ;;
+    *) echo "commande inconnue : $1 (voir --help)" >&2; exit 2 ;;
+esac

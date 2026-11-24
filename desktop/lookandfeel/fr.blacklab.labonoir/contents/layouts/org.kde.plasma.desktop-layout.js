@@ -38,8 +38,7 @@ tasks.currentConfigGroup = ["General"];
 tasks.writeConfig("launchers", [
     "applications:org.kde.dolphin.desktop",
     "applications:org.kde.konsole.desktop",
-    "applications:firefox-esr.desktop",
-    "applications:firefox_firefox.desktop",
+    "applications:app.zen_browser.zen.desktop",
     "applications:com.vscodium.codium.desktop",
     "applications:labnoir-arsenal.desktop",
     "applications:org.kde.plasma-systemmonitor.desktop",

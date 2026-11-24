@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 import argparse
+import json
 import os
 import re
 import shutil
+import sqlite3
 import subprocess
 import sys
 import tomllib
@@ -287,7 +289,11 @@ def apply(t, with_wallpaper=False):
     report(kwrite("kdeglobals", "Icons", "Theme", icons), "icônes", icons)
 
     write(DATA_HOME / "konsole" / "LabONoir.colorscheme", render_konsole(t))
-    report(True, "terminal", f"opacité {round(t.terminal_opacity * 100)} %")
+    write(CONFIG_HOME / "labnoir" / "prompt.sh", render_prompt(t))
+    report(True, "terminal", f"opacité {round(t.terminal_opacity * 100)} %, invite à l'accent (nouveaux terminaux)")
+    if tool("cool-retro-term"):
+        ok, detail = theme_cool_retro_term(t)
+        report(ok, "cool-retro-term", detail)
 
     left, right = BUTTONS[t.buttons]
     ok = all([
@@ -312,6 +318,55 @@ def apply(t, with_wallpaper=False):
 
     write(STATE, t.ident + "\n")
     return 0
+
+
+# [THM-12]
+def ansi(hexa):
+    return ";".join(str(c) for c in rgb(hexa))
+
+
+def render_prompt(t):
+    p = PALETTES[t.mode]
+    acc, muted, fg = ansi(t.accent), ansi(p["inactive"]), ansi(p["fg"])
+    ps1 = (
+        rf"\[\e[1;38;2;{acc}m\]\u\[\e[0;38;2;{muted}m\]@\h "
+        rf"\[\e[0;38;2;{fg}m\]\w \[\e[38;2;{acc}m\]❯\[\e[0m\] "
+    )
+    return f"case $- in *i*) PS1='{ps1}' ;; esac\n"
+
+
+# [THM-13]
+CRT_DB = DATA_HOME / "cool-retro-term" / "cool-retro-term" / "QML" / "OfflineStorage" / "Databases"
+
+
+def theme_cool_retro_term(t):
+    if subprocess.run(["pgrep", "-x", "cool-retro-term"], capture_output=True).returncode == 0:
+        return False, "ferme-le puis réapplique le thème"
+    dbs = sorted(CRT_DB.glob("*.sqlite")) if CRT_DB.is_dir() else []
+    bg = "#0B0B0D" if t.mode == "sombre" else "#F3F3F6"
+    done = 0
+    for db in dbs:
+        try:
+            con = sqlite3.connect(db)
+            row = con.execute("SELECT value FROM settings WHERE setting = '_CURRENT_PROFILE'").fetchone()
+            if not row:
+                con.close()
+                continue
+            profile = json.loads(row[0])
+            if "fontColor" not in profile:
+                con.close()
+                continue
+            profile["fontColor"] = t.accent.lower()
+            profile["backgroundColor"] = bg.lower()
+            con.execute("UPDATE settings SET value = ? WHERE setting = '_CURRENT_PROFILE'", (json.dumps(profile),))
+            con.commit()
+            con.close()
+            done += 1
+        except (sqlite3.Error, ValueError, OSError):
+            continue
+    if done:
+        return True, "texte à l'accent"
+    return False, "lance-le une première fois puis réapplique le thème"
 
 
 # [THM-11]

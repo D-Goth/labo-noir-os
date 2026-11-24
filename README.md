@@ -52,6 +52,9 @@ Le **Studio Lab'O Noir** règle tout sans toucher un fichier : couleur d'accent,
 force du flou, opacité du terminal, boutons des fenêtres, fond d'écran, avec un aperçu en direct.
 Trois thèmes sont fournis (`labonoir`, `nuit-bleue`, `givre`), les tiens s'enregistrent et se partagent.
 
+Le thème va jusqu'au terminal : couleurs et transparence de Konsole, invite à l'accent, et
+**cool-retro-term** (le terminal façon vieil écran cathodique) dont le texte prend la couleur du thème.
+
 Les modules **Orbit Pixel** (horloge, système, son, météo) se posent sur le bureau et suivent l'accent du thème.
 
 ### Arsenal
@@ -76,6 +79,10 @@ Un lanceur graphique pour les outils habituellement en ligne de commande :
 La Kali se met à jour depuis ses propres dépôts et se recrée en une commande : le système reste une Debian
 stable et propre.
 
+### Navigateur
+
+**Zen Browser**, dérivé de Firefox sans télémétrie, installé depuis Flathub et choisi comme navigateur par défaut.
+
 ### Développement
 
 Compilateurs C/C++, Python, Node.js, Go, Rust (rustup), Podman, Distrobox, Kate, Neovim, VSCodium,
@@ -94,7 +101,8 @@ sans serveur central).
 - ou **Kubuntu 26.04**.
 
 > **En machine virtuelle**, active l'accélération 3D (virt-manager : affichage Virtio avec 3D ;
-> VirtualBox : VMSVGA avec accélération 3D), sinon KWin coupe le flou. Compte 4 Go de RAM, 8 avec la Kali.
+> VirtualBox : VMSVGA avec accélération 3D ; VMware : « Accélérer les graphismes 3D »), sinon KWin coupe le flou.
+> Compte 4 Go de RAM, 8 avec la Kali. L'installateur ajoute les outils invités : l'écran suit la taille de la fenêtre.
 
 ### 2. Lab'O Noir
 
@@ -145,7 +153,7 @@ Ces commandes se lancent depuis ta session, **sans** `sudo`.
 
 | Module | Contenu |
 |---|---|
-| `base` | Outils de base, Flathub, commandes `labnoir-*` |
+| `base` | Outils de base, Flathub, Zen Browser, outils invités si c'est une VM (VMware, QEMU, VirtualBox), commandes `labnoir-*` |
 | `confidentialite` | Télémétrie coupée (Debian, KDE, Ubuntu), garde-fou contre le service de vérification d'âge |
 | `bureau` | Plasma 6 façon elementary, verre dépoli, thème, Konsole translucide, écran de connexion, Studio |
 | `dev` | Outils de développement |

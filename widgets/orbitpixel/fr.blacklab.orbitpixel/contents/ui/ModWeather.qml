@@ -89,14 +89,22 @@ OrbitCircle {
         onTriggered: c.refresh()
     }
 
-    OText {
-        theme: c.theme
-        ax: 80
-        ay: -10
-        pt: 48
-        fontOverride: "DejaVu Sans"
-        color: c.theme.accent
-        text: c.glyph
+    Text {
+        x: 30
+        y: 8
+        width: 100
+        height: 52
+        horizontalAlignment: Text.AlignHCenter
+        verticalAlignment: Text.AlignVCenter
+        fontSizeMode: Text.Fit
+        minimumPixelSize: 18
+        font.pixelSize: 46
+        font.family: "DejaVu Sans"
+        color: c.theme ? c.theme.accent : "#ff1654"
+        textFormat: Text.PlainText
+        renderType: Text.QtRendering
+        antialiasing: true
+        text: c.glyph + "\uFE0E"
     }
 
     OText {

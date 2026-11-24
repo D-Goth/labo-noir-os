@@ -19,6 +19,7 @@ module_run() {
     dsk_system_defaults
     dsk_sddm
     dsk_first_login
+    dsk_prompt
     ok "bureau prêt : il s'applique à la prochaine ouverture de session"
 }
 
@@ -60,6 +61,26 @@ dsk_sddm() {
                 >/usr/share/sddm/themes/breeze/theme.conf.user
         fi
     fi
+}
+
+# [DSK-11]
+dsk_prompt() {
+    # shellcheck disable=SC2016
+    local line='[ -f "$HOME/.config/labnoir/prompt.sh" ] && . "$HOME/.config/labnoir/prompt.sh"'
+    local f home
+    home="$(target_home)"
+    for f in /etc/skel/.bashrc ${home:+"$home/.bashrc"}; do
+        [[ -f "$f" ]] || continue
+        if grep -qF '.config/labnoir/prompt.sh' "$f"; then
+            continue
+        fi
+        if [[ "$LABNOIR_DRY_RUN" == 1 ]]; then
+            info "$f : invite Lab'O Noir"
+        else
+            printf '\n%s\n' "$line" >>"$f"
+        fi
+    done
+    ok "invite du terminal à l'accent du thème"
 }
 
 # [DSK-05]
